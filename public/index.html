@@ -212,31 +212,8 @@
 
 <!-- Vadība -->
 <div class="control-card">
-  <div class="control-row">
-    <div>
-      <div class="control-label">Relejs / Iekārta</div>
-      <div class="control-sub" id="relay-sub">Manuāla vadība</div>
-    </div>
-    <button id="relay-btn" class="toggle-btn btn-off" onclick="toggleRelay()">IESLĒGT</button>
-  </div>
 
-  <div style="border-top:1px solid #dde6f5;padding-top:14px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <div>
-        <div class="control-label">Automātiskā robeža</div>
-        <div class="control-sub">Ieslēdz, ja cena zemāka</div>
-      </div>
-      <div class="threshold-val"><span id="threshold-display">60</span> €</div>
-    </div>
-    <div class="threshold-row">
-      <span id="slider-min" style="font-size:12px;color:var(--muted)">10</span>
-      <input type="range" id="threshold-slider" min="10" max="120" value="60"
-             oninput="updateThreshold(this.value)" onchange="sendThreshold(this.value)">
-      <span id="slider-max" style="font-size:12px;color:var(--muted)">120</span>
-    </div>
-  </div>
-
-  <div style="border-top:1px solid #dde6f5;padding-top:14px;margin-top:14px;">
+  <div style="margin-bottom:14px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
       <div>
         <div class="control-label">Nepieciešamā enerģija</div>
@@ -252,7 +229,7 @@
     </div>
   </div>
 
-  <div style="border-top:1px solid #dde6f5;padding-top:14px;margin-top:14px;">
+  <div style="border-top:1px solid #dde6f5;padding-top:14px;margin-bottom:14px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
       <div>
         <div class="control-label">Invertora jauda</div>
@@ -267,6 +244,33 @@
       <span style="font-size:12px;color:var(--muted)">50</span>
     </div>
   </div>
+
+  <div style="border-top:1px solid #dde6f5;padding-top:14px;margin-bottom:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div>
+        <div class="control-label">Automātiskā robeža</div>
+        <div class="control-sub">Ieslēdz, ja cena zemāka</div>
+      </div>
+      <div class="threshold-val"><span id="threshold-display">60</span> €</div>
+    </div>
+    <div class="threshold-row">
+      <span id="slider-min" style="font-size:12px;color:var(--muted)">10</span>
+      <input type="range" id="threshold-slider" min="10" max="120" value="60"
+             oninput="updateThreshold(this.value)" onchange="sendThreshold(this.value)">
+      <span id="slider-max" style="font-size:12px;color:var(--muted)">120</span>
+    </div>
+  </div>
+
+  <div style="border-top:1px solid #dde6f5;padding-top:14px;">
+    <div class="control-row" style="margin-bottom:0;">
+      <div>
+        <div class="control-label">Relejs / Iekārta</div>
+        <div class="control-sub" id="relay-sub">Manuāla vadība</div>
+      </div>
+      <button id="relay-btn" class="toggle-btn btn-off" onclick="toggleRelay()">IESLĒGT</button>
+    </div>
+  </div>
+
 </div>
 
 <footer>
