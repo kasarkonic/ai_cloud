@@ -195,6 +195,21 @@
   </div>
 </div>
 
+<!-- Optimālais grafiks -->
+<div class="chart-card" id="optimal-card" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+    <div class="chart-title" style="margin-bottom:0">Optimālais enerģijas grafiks</div>
+    <span id="optimal-cost" style="font-size:12px;font-weight:600;color:#16a34a;">—</span>
+  </div>
+  <div style="position:relative;height:160px">
+    <canvas id="optimalChart"></canvas>
+  </div>
+  <div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center">
+    <span style="display:inline-block;width:10px;height:10px;background:#22c55e;border-radius:2px;margin-right:4px;"></span>Ieteicamie laiki
+    <span style="display:inline-block;width:10px;height:10px;background:#e2e8f0;border-radius:2px;margin:0 4px 0 12px;"></span>Pārējie laiki
+  </div>
+</div>
+
 <!-- Vadība -->
 <div class="control-card">
   <div class="control-row">
@@ -235,21 +250,6 @@
              oninput="updateEnergy(this.value)" onchange="sendEnergy(this.value)">
       <span style="font-size:12px;color:var(--muted)">200</span>
     </div>
-  </div>
-</div>
-
-<!-- Optimālais grafiks -->
-<div class="chart-card" id="optimal-card" style="display:none">
-  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
-    <div class="chart-title" style="margin-bottom:0">Optimālais enerģijas grafiks</div>
-    <span id="optimal-cost" style="font-size:12px;font-weight:600;color:#16a34a;">—</span>
-  </div>
-  <div style="position:relative;height:160px">
-    <canvas id="optimalChart"></canvas>
-  </div>
-  <div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center">
-    <span style="display:inline-block;width:10px;height:10px;background:#22c55e;border-radius:2px;margin-right:4px;"></span>Ieteicamie laiki
-    <span style="display:inline-block;width:10px;height:10px;background:#e2e8f0;border-radius:2px;margin:0 4px 0 12px;"></span>Pārējie laiki
   </div>
 </div>
 
