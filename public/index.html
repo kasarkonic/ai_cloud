@@ -335,6 +335,11 @@ function updateUI(d) {
 
   // Grafiks
   drawChart(prices, slot, thresh);
+
+  // Optimālais grafiks – automātiski no slider vērtības
+  lastPrices = prices;
+  const energyVal = parseFloat(document.getElementById('energy-slider').value);
+  drawOptimalChart(calcOptimal(prices, energyVal));
 }
 
 // ─── Grafiks ──────────────────────────────────────────────────────────────────
@@ -434,30 +439,40 @@ function updateThreshold(v) {
 
 // ─── Nepieciešamā enerģija ────────────────────────────────────────────────────
 let optimalChartInstance = null;
+let lastPrices = null;
 
 function updateEnergy(v) {
   document.getElementById('energy-display').textContent = Math.round(v);
+  if (lastPrices) drawOptimalChart(calcOptimal(lastPrices, parseFloat(v)));
 }
 
-async function sendEnergy(v) {
-  if (parseFloat(v) === 0) {
-    document.getElementById('optimal-card').style.display = 'none';
-    return;
-  }
-  try {
-    const r = await fetch(`/api/optimal?energy=${v}`);
-    const d = await r.json();
-    drawOptimalChart(d);
-  } catch(e) {}
+function sendEnergy(v) {
+  // aprēķins notiek klients pusē – sendEnergy vairs nav vajadzīgs
+}
+
+function calcOptimal(prices, energy) {
+  if (energy <= 0) return { selectedSlots: [], totalCost: 0, energy: 0 };
+  const nSlots = Math.max(1, Math.round(energy / 200 * 96));
+  const indexed = Array.from({length: 96}, (_, i) => i)
+    .sort((a, b) => prices[a] - prices[b]);
+  const selected = indexed.slice(0, nSlots).sort((a, b) => a - b);
+  const energyPerSlotMwh = (energy / nSlots) / 1000;
+  const totalCost = selected.reduce((s, i) => s + prices[i] * energyPerSlotMwh, 0);
+  return { selectedSlots: selected, totalCost: Math.round(totalCost * 100) / 100, energy };
 }
 
 function drawOptimalChart(d) {
+  const energy = parseFloat(d.energy);
+  if (energy <= 0) {
+    document.getElementById('optimal-card').style.display = 'none';
+    return;
+  }
   const selected = new Set(d.selectedSlots);
   const colors = Array.from({length: 96}, (_, i) => selected.has(i) ? '#22c55e' : '#e2e8f0');
 
   document.getElementById('optimal-card').style.display = 'block';
   document.getElementById('optimal-cost').textContent =
-    `${d.energy} kWh · ~${d.totalCost.toFixed(2)} €`;
+    `${energy} kWh · ~${d.totalCost.toFixed(2)} €`;
 
   const labels = Array.from({length: 96}, (_, i) => {
     const h = Math.floor(i / 4).toString().padStart(2,'0');
