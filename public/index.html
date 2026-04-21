@@ -186,7 +186,10 @@
 
 <!-- Grafiks -->
 <div class="chart-card">
-  <div class="chart-title">Cena ik 15 minūtes · 24h</div>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+    <div class="chart-title" style="margin-bottom:0">Cena ik 15 minūtes · 24h</div>
+    <span id="price-date" style="font-size:12px;font-weight:600;color:#3b82f6;">—</span>
+  </div>
   <div style="position:relative;height:220px">
     <canvas id="priceChart"></canvas>
   </div>
@@ -246,6 +249,19 @@ function updateUI(d) {
   const thresh = d.threshold;
 
   relayState = relay;
+
+  // Datums
+  const dateEl = document.getElementById('price-date');
+  if (d.priceData && d.priceData !== 'Demo data') {
+    const parts = d.priceData.split('-');
+    if (parts.length === 3) {
+      dateEl.textContent = `${parts[2]}.${parts[1]}.${parts[0]}`;
+    } else {
+      dateEl.textContent = d.priceData;
+    }
+  } else {
+    dateEl.textContent = d.priceData || '—';
+  }
 
   // Skaitļi
   const minP = Math.min(...prices).toFixed(1);
