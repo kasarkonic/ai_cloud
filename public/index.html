@@ -354,8 +354,7 @@ function updateUI(d) {
 
   // Optimālais grafiks – automātiski no slider vērtības
   lastPrices = prices;
-  const energyVal = parseFloat(document.getElementById('energy-slider').value);
-  drawOptimalChart(calcOptimal(prices, energyVal));
+  drawOptimalChart(calcOptimal(prices, getEnergyKwh(), getInverterKw()));
 }
 
 // ─── Grafiks ──────────────────────────────────────────────────────────────────
@@ -459,26 +458,46 @@ let lastPrices = null;
 
 function updateEnergy(v) {
   document.getElementById('energy-display').textContent = Math.round(v);
-  if (lastPrices) drawOptimalChart(calcOptimal(lastPrices, parseFloat(v)));
+  if (lastPrices) drawOptimalChart(calcOptimal(lastPrices, parseFloat(v), getInverterKw()));
 }
 
 function updateInverter(v) {
   document.getElementById('inverter-display').textContent = parseFloat(v).toFixed(1).replace('.0','');
+  if (lastPrices) drawOptimalChart(calcOptimal(lastPrices, getEnergyKwh(), parseFloat(v)));
 }
+
+function getEnergyKwh()  { return parseFloat(document.getElementById('energy-slider').value); }
+function getInverterKw() { return parseFloat(document.getElementById('inverter-slider').value); }
 
 function sendEnergy(v) {
   // aprēķins notiek klients pusē – sendEnergy vairs nav vajadzīgs
 }
 
-function calcOptimal(prices, energy) {
-  if (energy <= 0) return { selectedSlots: [], totalCost: 0, energy: 0 };
-  const nSlots = Math.max(1, Math.round(energy / 200 * 96));
+function calcOptimal(prices, energy, inverterKw) {
+  if (energy <= 0) return { selectedSlots: [], slotPowers: Array(96).fill(0), totalCost: 0, energy: 0 };
+
+  // Cik kWh viens slots (15 min) var uzlādēt pie pilnas jaudas
+  const slotCapacity = inverterKw * 0.25;
+  const nFullSlots = Math.floor(energy / slotCapacity);
+  const remaining  = energy - nFullSlots * slotCapacity;  // kWh pēdējā daļējai slotā
+  const nSlots     = Math.min(96, nFullSlots + (remaining > 0.001 ? 1 : 0));
+
   const indexed = Array.from({length: 96}, (_, i) => i)
     .sort((a, b) => prices[a] - prices[b]);
   const selected = indexed.slice(0, nSlots).sort((a, b) => a - b);
-  const energyPerSlotMwh = (energy / nSlots) / 1000;
-  const totalCost = selected.reduce((s, i) => s + prices[i] * energyPerSlotMwh, 0);
-  return { selectedSlots: selected, totalCost: Math.round(totalCost * 100) / 100, energy };
+
+  // Jauda katrā slotā (kW)
+  const slotPowers = Array(96).fill(0);
+  selected.forEach((slot, idx) => {
+    slotPowers[slot] = (idx < nFullSlots) ? inverterKw : (remaining / 0.25);
+  });
+
+  // Izmaksas
+  const totalCost = selected.reduce((s, slot) => {
+    return s + prices[slot] * (slotPowers[slot] * 0.25) / 1000;
+  }, 0);
+
+  return { selectedSlots: selected, slotPowers, totalCost: Math.round(totalCost * 100) / 100, energy };
 }
 
 function drawOptimalChart(d) {
@@ -487,8 +506,7 @@ function drawOptimalChart(d) {
     document.getElementById('optimal-card').style.display = 'none';
     return;
   }
-  const selected = new Set(d.selectedSlots);
-  const colors = Array.from({length: 96}, (_, i) => selected.has(i) ? '#22c55e' : '#e2e8f0');
+  const colors = d.slotPowers.map(p => p > 0 ? '#22c55e' : '#e2e8f0');
 
   document.getElementById('optimal-card').style.display = 'block';
   document.getElementById('optimal-cost').textContent =
@@ -501,6 +519,7 @@ function drawOptimalChart(d) {
   });
 
   if (optimalChartInstance) {
+    optimalChartInstance.data.datasets[0].data = d.slotPowers;
     optimalChartInstance.data.datasets[0].backgroundColor = colors;
     optimalChartInstance.update('none');
     return;
@@ -511,16 +530,26 @@ function drawOptimalChart(d) {
     type: 'bar',
     data: {
       labels,
-      datasets: [{ data: Array(96).fill(1), backgroundColor: colors, borderRadius: 2, borderSkipped: false }]
+      datasets: [{ data: d.slotPowers, backgroundColor: colors, borderRadius: 2, borderSkipped: false }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       animation: { duration: 300 },
-      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#ffffff', borderColor: '#dde6f5', borderWidth: 1,
+          titleColor: '#64748b', bodyColor: '#1e293b',
+          callbacks: { label: c => `${c.parsed.y.toFixed(2)} kW` }
+        }
+      },
       scales: {
         x: { grid: { color: '#e8f0fc' }, ticks: { color: '#94a3b8', font: { size: 10 }, maxRotation: 0 } },
-        y: { display: false }
+        y: {
+          grid: { color: '#e8f0fc' },
+          ticks: { color: '#94a3b8', font: { size: 10 }, callback: v => v + ' kW' }
+        }
       }
     }
   });
