@@ -292,14 +292,14 @@ function updateUI(d) {
     : `Auto: neaktīvs (${prices[slot].toFixed(1)} ≥ ${thresh.toFixed(0)} €)`;
 
   // Slīdnis – min/max no faktiskajām cenām
-  const minP = Math.floor(Math.min(...prices));
-  const maxP = Math.ceil(Math.max(...prices));
+  const sliderMin = Math.floor(Math.min(...prices));
+  const sliderMax = Math.ceil(Math.max(...prices));
   const slider = document.getElementById('threshold-slider');
-  slider.min = minP;
-  slider.max = maxP;
+  slider.min = sliderMin;
+  slider.max = sliderMax;
   slider.value = thresh;
-  document.getElementById('slider-min').textContent = minP;
-  document.getElementById('slider-max').textContent = maxP;
+  document.getElementById('slider-min').textContent = sliderMin;
+  document.getElementById('slider-max').textContent = sliderMax;
   document.getElementById('threshold-display').textContent = Math.round(thresh);
 
   // Grafiks
