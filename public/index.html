@@ -251,6 +251,22 @@
       <span style="font-size:12px;color:var(--muted)">200</span>
     </div>
   </div>
+
+  <div style="border-top:1px solid #dde6f5;padding-top:14px;margin-top:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div>
+        <div class="control-label">Invertora jauda</div>
+        <div class="control-sub">Maks. uzlādes jauda</div>
+      </div>
+      <div class="threshold-val"><span id="inverter-display">5</span> kW</div>
+    </div>
+    <div class="threshold-row">
+      <span style="font-size:12px;color:var(--muted)">0.5</span>
+      <input type="range" id="inverter-slider" min="0.5" max="50" step="0.5" value="5"
+             oninput="updateInverter(this.value)">
+      <span style="font-size:12px;color:var(--muted)">50</span>
+    </div>
+  </div>
 </div>
 
 <footer>
@@ -444,6 +460,10 @@ let lastPrices = null;
 function updateEnergy(v) {
   document.getElementById('energy-display').textContent = Math.round(v);
   if (lastPrices) drawOptimalChart(calcOptimal(lastPrices, parseFloat(v)));
+}
+
+function updateInverter(v) {
+  document.getElementById('inverter-display').textContent = parseFloat(v).toFixed(1).replace('.0','');
 }
 
 function sendEnergy(v) {
