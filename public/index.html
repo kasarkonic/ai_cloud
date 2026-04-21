@@ -220,6 +220,37 @@
       <span id="slider-max" style="font-size:12px;color:var(--muted)">120</span>
     </div>
   </div>
+
+  <div style="border-top:1px solid #dde6f5;padding-top:14px;margin-top:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div>
+        <div class="control-label">Nepieciešamā enerģija</div>
+        <div class="control-sub">Plānotais patēriņš</div>
+      </div>
+      <div class="threshold-val"><span id="energy-display">50</span> kWh</div>
+    </div>
+    <div class="threshold-row">
+      <span style="font-size:12px;color:var(--muted)">0</span>
+      <input type="range" id="energy-slider" min="0" max="200" value="50"
+             oninput="updateEnergy(this.value)" onchange="sendEnergy(this.value)">
+      <span style="font-size:12px;color:var(--muted)">200</span>
+    </div>
+  </div>
+</div>
+
+<!-- Optimālais grafiks -->
+<div class="chart-card" id="optimal-card" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+    <div class="chart-title" style="margin-bottom:0">Optimālais enerģijas grafiks</div>
+    <span id="optimal-cost" style="font-size:12px;font-weight:600;color:#16a34a;">—</span>
+  </div>
+  <div style="position:relative;height:160px">
+    <canvas id="optimalChart"></canvas>
+  </div>
+  <div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center">
+    <span style="display:inline-block;width:10px;height:10px;background:#22c55e;border-radius:2px;margin-right:4px;"></span>Ieteicamie laiki
+    <span style="display:inline-block;width:10px;height:10px;background:#e2e8f0;border-radius:2px;margin:0 4px 0 12px;"></span>Pārējie laiki
+  </div>
 </div>
 
 <footer>
@@ -399,6 +430,65 @@ async function toggleRelay() {
 // ─── Robeža ───────────────────────────────────────────────────────────────────
 function updateThreshold(v) {
   document.getElementById('threshold-display').textContent = Math.round(v);
+}
+
+// ─── Nepieciešamā enerģija ────────────────────────────────────────────────────
+let optimalChartInstance = null;
+
+function updateEnergy(v) {
+  document.getElementById('energy-display').textContent = Math.round(v);
+}
+
+async function sendEnergy(v) {
+  if (parseFloat(v) === 0) {
+    document.getElementById('optimal-card').style.display = 'none';
+    return;
+  }
+  try {
+    const r = await fetch(`/api/optimal?energy=${v}`);
+    const d = await r.json();
+    drawOptimalChart(d);
+  } catch(e) {}
+}
+
+function drawOptimalChart(d) {
+  const selected = new Set(d.selectedSlots);
+  const colors = Array.from({length: 96}, (_, i) => selected.has(i) ? '#22c55e' : '#e2e8f0');
+
+  document.getElementById('optimal-card').style.display = 'block';
+  document.getElementById('optimal-cost').textContent =
+    `${d.energy} kWh · ~${d.totalCost.toFixed(2)} €`;
+
+  const labels = Array.from({length: 96}, (_, i) => {
+    const h = Math.floor(i / 4).toString().padStart(2,'0');
+    const m = ((i % 4) * 15).toString().padStart(2,'0');
+    return (i % 8 === 0) ? `${h}:${m}` : '';
+  });
+
+  if (optimalChartInstance) {
+    optimalChartInstance.data.datasets[0].backgroundColor = colors;
+    optimalChartInstance.update('none');
+    return;
+  }
+
+  const ctx = document.getElementById('optimalChart').getContext('2d');
+  optimalChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: Array(96).fill(1), backgroundColor: colors, borderRadius: 2, borderSkipped: false }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 300 },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: {
+        x: { grid: { color: '#e8f0fc' }, ticks: { color: '#94a3b8', font: { size: 10 }, maxRotation: 0 } },
+        y: { display: false }
+      }
+    }
+  });
 }
 async function sendThreshold(v) {
   try {

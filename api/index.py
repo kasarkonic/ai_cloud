@@ -127,6 +127,34 @@ def handle_prices():
     })
 
 
+@app.route('/api/optimal', methods=['GET'])
+def handle_optimal():
+    prices_data, _ = get_prices()
+    try:
+        energy = float(request.args.get('energy', 50))
+    except ValueError:
+        energy = 50.0
+    energy = max(0.0, min(200.0, energy))
+
+    # Sadalām 200 kWh uz 96 slotiem lineāri
+    n_slots = max(1, round(energy / 200 * 96))
+
+    # Izvēlāmies lētākos n_slots slotus
+    indexed = sorted(range(96), key=lambda i: prices_data[i])
+    selected = sorted(indexed[:n_slots])
+
+    # Izmaksas: cena (EUR/MWh) * enerģija_slotā (MWh)
+    energy_per_slot_mwh = (energy / n_slots) / 1000
+    total_cost = sum(prices_data[i] * energy_per_slot_mwh for i in selected)
+
+    return jsonify({
+        "selectedSlots": selected,
+        "totalCost": round(total_cost, 2),
+        "energy": energy,
+        "nSlots": n_slots,
+    })
+
+
 @app.route('/api/threshold', methods=['GET'])
 def handle_threshold():
     global price_threshold
