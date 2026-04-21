@@ -127,6 +127,18 @@ def handle_prices():
     })
 
 
+@app.route('/api/threshold', methods=['GET'])
+def handle_threshold():
+    global price_threshold
+    value = request.args.get('value')
+    if value is not None:
+        try:
+            price_threshold = float(value)
+        except ValueError:
+            pass
+    return jsonify({"threshold": price_threshold})
+
+
 @app.route('/api/data', methods=['POST'])
 def handle_data():
     content = request.json
