@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elektrības cenas</title>
+<style>
+  :root {
+    --bg: #f0f6ff;
+    --surface: #ffffff;
+    --border: #dde6f5;
+    --text: #1e293b;
+    --muted: #64748b;
+    --accent: #3b82f6;
+    --green: #16a34a;
+    --amber: #d97706;
+    --red: #dc2626;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #fef9c3 100%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 16px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; color: #1e3a5f; }
+  .badge {
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+  }
+  .badge-on  { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+  .badge-off { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+
+  /* Galvenie skaitļi */
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 12px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.07);
+  }
+  .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 22px; font-weight: 700; line-height: 1; }
+  .stat-unit  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* Grafika konteiners */
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.07);
+  }
+  .chart-title {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  canvas { width: 100% !important; }
+
+  /* Vadības poga */
+  .control-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.07);
+  }
+  .control-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .control-label { font-size: 14px; font-weight: 600; color: #1e3a5f; }
+  .control-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* Liela pogas slēdzis */
+  .toggle-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 12px 28px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 120px;
+  }
+  .toggle-btn:active { transform: scale(0.96); }
+  .btn-on  { background: linear-gradient(135deg,#16a34a,#4ade80); color: #fff; box-shadow: 0 3px 10px rgba(22,163,74,0.3); }
+  .btn-off { background: linear-gradient(135deg,#ef4444,#fb923c); color: #fff; box-shadow: 0 3px 10px rgba(239,68,68,0.3); }
+
+  /* Slīdnis */
+  .threshold-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 5px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #bfdbfe, #dde6f5);
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #06b6d4);
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(59,130,246,0.4);
+  }
+  .threshold-val {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 60px;
+    text-align: right;
+  }
+
+  /* Kājene */
+  footer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+  #last-update { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>⚡ Elektrības cenas</h1>
+    <p style="font-size:12px;color:#64748b;margin-top:2px;">Reāllaika displejs · ESP32</p>
+  </div>
+  <span id="relay-badge" class="badge badge-off">IZSLĒGTS</span>
+</header>
+
+<!-- Galvenie skaitļi -->
+<div class="stats">
+  <div class="stat-card">
+    <div class="stat-label">Tagad</div>
+    <div class="stat-value" id="price-now" style="color:#d97706">—</div>
+    <div class="stat-unit">EUR/MWh</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Min</div>
+    <div class="stat-value" id="price-min" style="color:#16a34a">—</div>
+    <div class="stat-unit">EUR/MWh</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Maks</div>
+    <div class="stat-value" id="price-max" style="color:#dc2626">—</div>
+    <div class="stat-unit">EUR/MWh</div>
+  </div>
+</div>
+
+<!-- Grafiks -->
+<div class="chart-card">
+  <div class="chart-title">Cena ik 15 minūtes · 24h</div>
+  <div style="position:relative;height:220px">
+    <canvas id="priceChart"></canvas>
+  </div>
+</div>
+
+<!-- Vadība -->
+<div class="control-card">
+  <div class="control-row">
+    <div>
+      <div class="control-label">Relejs / Iekārta</div>
+      <div class="control-sub" id="relay-sub">Manuāla vadība</div>
+    </div>
+    <button id="relay-btn" class="toggle-btn btn-off" onclick="toggleRelay()">IESLĒGT</button>
+  </div>
+
+  <div style="border-top:1px solid #dde6f5;padding-top:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div>
+        <div class="control-label">Automātiskā robeža</div>
+        <div class="control-sub">Ieslēdz, ja cena zemāka</div>
+      </div>
+      <div class="threshold-val"><span id="threshold-display">60</span> €</div>
+    </div>
+    <div class="threshold-row">
+      <span style="font-size:12px;color:var(--muted)">10</span>
+      <input type="range" id="threshold-slider" min="10" max="120" value="60"
+             oninput="updateThreshold(this.value)" onchange="sendThreshold(this.value)">
+      <span style="font-size:12px;color:var(--muted)">120</span>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Pēdējā atjaunošana: <span id="last-update">—</span>
+</footer>
+
+<script>
+let chartInstance = null;
+let relayState = false;
+
+// ─── Datu ielāde no ESP32 API ─────────────────────────────────────────────────
+async function fetchData() {
+  try {
+    const r = await fetch('/api/prices');
+    const d = await r.json();
+    updateUI(d);
+    document.getElementById('last-update').textContent = new Date().toLocaleTimeString('lv-LV');
+  } catch(e) {
+    document.getElementById('last-update').textContent = 'Savienojuma kļūda';
+  }
+}
+
+function updateUI(d) {
+  const prices = d.prices;
+  const slot   = d.currentSlot;
+  const relay  = d.relayOn;
+  const thresh = d.threshold;
+
+  relayState = relay;
+
+  // Skaitļi
+  const minP = Math.min(...prices).toFixed(1);
+  const maxP = Math.max(...prices).toFixed(1);
+  document.getElementById('price-now').textContent = prices[slot].toFixed(1);
+  document.getElementById('price-min').textContent = minP;
+  document.getElementById('price-max').textContent = maxP;
+
+  // Relejs
+  const badge = document.getElementById('relay-badge');
+  const btn   = document.getElementById('relay-btn');
+  const sub   = document.getElementById('relay-sub');
+  if (relay) {
+    badge.textContent = 'IESLĒGTS';
+    badge.className = 'badge badge-on';
+    btn.textContent = 'IZSLĒGT';
+    btn.className = 'toggle-btn btn-on';
+  } else {
+    badge.textContent = 'IZSLĒGTS';
+    badge.className = 'badge badge-off';
+    btn.textContent = 'IESLĒGT';
+    btn.className = 'toggle-btn btn-off';
+  }
+
+  const autoState = prices[slot] < thresh;
+  sub.textContent = autoState
+    ? `Auto: aktīvs (${prices[slot].toFixed(1)} < ${thresh.toFixed(0)} €)`
+    : `Auto: neaktīvs (${prices[slot].toFixed(1)} ≥ ${thresh.toFixed(0)} €)`;
+
+  // Slīdnis
+  document.getElementById('threshold-slider').value = thresh;
+  document.getElementById('threshold-display').textContent = Math.round(thresh);
+
+  // Grafiks
+  drawChart(prices, slot, thresh);
+}
+
+// ─── Grafiks ──────────────────────────────────────────────────────────────────
+function drawChart(prices, currentSlot, threshold) {
+  const colors = prices.map((p, i) => {
+    if (i === currentSlot) return '#3b82f6';
+    if (p < threshold)     return '#22c55e';
+    if (p > 80)            return '#ef4444';
+    return '#94a3b8';
+  });
+
+  // Atjaunina esošo grafiku, nevis iznīcina un veido no jauna
+  if (chartInstance) {
+    chartInstance.data.datasets[0].data = prices;
+    chartInstance.data.datasets[0].backgroundColor = colors;
+    chartInstance.data.datasets[1].data = Array(96).fill(threshold);
+    chartInstance.update('none');
+    return;
+  }
+
+  const labels = Array.from({length: 96}, (_, i) => {
+    const h = Math.floor(i / 4).toString().padStart(2,'0');
+    const m = ((i % 4) * 15).toString().padStart(2,'0');
+    return (i % 8 === 0) ? `${h}:${m}` : '';
+  });
+
+  const ctx = document.getElementById('priceChart').getContext('2d');
+
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          data: prices,
+          backgroundColor: colors,
+          borderRadius: 2,
+          borderSkipped: false,
+        },
+        {
+          type: 'line',
+          data: Array(96).fill(threshold),
+          borderColor: '#fbbf24',
+          borderWidth: 1.5,
+          borderDash: [4, 4],
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 400 },
+      interaction: { mode: 'index' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#ffffff',
+          borderColor: '#dde6f5',
+          borderWidth: 1,
+          titleColor: '#64748b',
+          bodyColor: '#1e293b',
+          callbacks: {
+            label: ctx => `${ctx.parsed.y.toFixed(2)} EUR/MWh`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#e8f0fc', drawBorder: false },
+          ticks: { color: '#94a3b8', font: { size: 10 }, maxRotation: 0 }
+        },
+        y: {
+          grid: { color: '#e8f0fc', drawBorder: false },
+          ticks: { color: '#94a3b8', font: { size: 10 },
+                   callback: v => v + ' €' }
+        }
+      }
+    }
+  });
+}
+
+// ─── Releja vadība ────────────────────────────────────────────────────────────
+async function toggleRelay() {
+  const newState = relayState ? 'off' : 'on';
+  try {
+    await fetch(`/api/relay?state=${newState}`);
+    fetchData();
+  } catch(e) { alert('Savienojuma kļūda'); }
+}
+
+// ─── Robeža ───────────────────────────────────────────────────────────────────
+function updateThreshold(v) {
+  document.getElementById('threshold-display').textContent = Math.round(v);
+}
+async function sendThreshold(v) {
+  try {
+    await fetch(`/api/threshold?value=${v}`);
+    fetchData();
+  } catch(e) {}
+}
+
+// ─── Ielāde un automātiskā atjaunināšana ──────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  fetchData();
+  setInterval(fetchData, 30000);
+});
+</script>
+
+<!-- Chart.js no CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</body>
+</html>
