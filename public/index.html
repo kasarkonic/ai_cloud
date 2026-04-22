@@ -153,6 +153,72 @@
     margin-top: 8px;
   }
   #last-update { font-variant-numeric: tabular-nums; }
+
+  /* Mērījumu sekcija */
+  .meas-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .meas-val-card {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border: 1px solid #bae6fd;
+    border-radius: var(--radius);
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .meas-val-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .meas-val-value { font-size: 20px; font-weight: 700; color: #0369a1; line-height: 1.1; word-break: break-all; }
+  .meas-val-sub   { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* Tabula */
+  .meas-table-wrap {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 220px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    margin-top: 12px;
+  }
+  .meas-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .meas-table thead th {
+    background: #f1f5f9;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 8px 10px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .meas-table tbody tr:nth-child(even) { background: #f8fafc; }
+  .meas-table tbody td { padding: 6px 10px; color: var(--text); white-space: nowrap; }
+  .meas-table tbody tr:hover td { background: #e0f2fe; }
+
+  .export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg, #0369a1, #0ea5e9);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(3,105,161,0.25);
+  }
+  .export-btn:active { transform: scale(0.97); }
+  .meas-empty { text-align:center; padding:24px; color:var(--muted); font-size:13px; }
 </style>
 </head>
 <body>
@@ -276,6 +342,58 @@
 <footer>
   Pēdējā atjaunošana: <span id="last-update">—</span>
 </footer>
+
+<!-- ─── Mērījumi no ierīces ──────────────────────────────────────────────── -->
+<div class="chart-card" style="margin-top:16px;">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+    <div class="chart-title" style="margin-bottom:0">Mērījumi no ierīces</div>
+    <span id="meas-last-time" style="font-size:11px;color:var(--muted);">—</span>
+  </div>
+
+  <!-- Pēdējās vērtības -->
+  <div class="meas-grid">
+    <div class="meas-val-card">
+      <div class="meas-val-label">vali</div>
+      <div class="meas-val-value" id="meas-vali">—</div>
+      <div class="meas-val-sub">vesels skaitlis</div>
+    </div>
+    <div class="meas-val-card">
+      <div class="meas-val-label">valf</div>
+      <div class="meas-val-value" id="meas-valf">—</div>
+      <div class="meas-val-sub">decimāls</div>
+    </div>
+    <div class="meas-val-card">
+      <div class="meas-val-label">vals</div>
+      <div class="meas-val-value" id="meas-vals" style="font-size:14px;">—</div>
+      <div class="meas-val-sub">teksts</div>
+    </div>
+  </div>
+
+  <!-- valf grafiks -->
+  <div style="position:relative;height:160px;margin-bottom:4px;">
+    <canvas id="measChart"></canvas>
+  </div>
+
+  <!-- Vēstures tabula -->
+  <div class="meas-table-wrap">
+    <table class="meas-table">
+      <thead>
+        <tr>
+          <th>Saņemts</th>
+          <th>Timestamp</th>
+          <th>vali</th>
+          <th>valf</th>
+          <th>vals</th>
+        </tr>
+      </thead>
+      <tbody id="meas-tbody">
+        <tr><td colspan="5" class="meas-empty">Nav datu</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <button class="export-btn" onclick="exportMeasurements()">&#8595; Lejupielādēt CSV</button>
+</div>
 
 <script>
 let chartInstance = null;
@@ -569,7 +687,101 @@ async function sendThreshold(v) {
 document.addEventListener('DOMContentLoaded', () => {
   fetchData();
   setInterval(fetchData, 30000);
+  fetchMeasurements();
+  setInterval(fetchMeasurements, 10000);
 });
+
+// ─── Mērījumi ─────────────────────────────────────────────────────────────────
+let measChartInstance = null;
+
+async function fetchMeasurements() {
+  try {
+    const r = await fetch('/api/measurements?limit=200');
+    const d = await r.json();
+    updateMeasurements(d.measurements || []);
+  } catch(e) {}
+}
+
+function updateMeasurements(rows) {
+  if (!rows.length) return;
+
+  // Pēdējā vērtība
+  const last = rows[rows.length - 1];
+  document.getElementById('meas-vali').textContent = last.vali;
+  document.getElementById('meas-valf').textContent = parseFloat(last.valf).toFixed(4);
+  document.getElementById('meas-vals').textContent = last.vals;
+  document.getElementById('meas-last-time').textContent =
+    new Date(last.received_at).toLocaleTimeString('lv-LV');
+
+  // Grafiks – valf vēsture
+  const labels = rows.map(r => {
+    const d = new Date(r.received_at);
+    return d.toLocaleTimeString('lv-LV', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  });
+  const vals = rows.map(r => parseFloat(r.valf));
+
+  if (measChartInstance) {
+    measChartInstance.data.labels = labels;
+    measChartInstance.data.datasets[0].data = vals;
+    measChartInstance.update('none');
+  } else {
+    const ctx = document.getElementById('measChart').getContext('2d');
+    measChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data: vals,
+          borderColor: '#0ea5e9',
+          backgroundColor: 'rgba(14,165,233,0.08)',
+          borderWidth: 2,
+          pointRadius: rows.length < 50 ? 3 : 0,
+          fill: true,
+          tension: 0.3,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 300 },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#fff', borderColor: '#dde6f5', borderWidth: 1,
+            titleColor: '#64748b', bodyColor: '#1e293b',
+            callbacks: { label: c => `valf: ${c.parsed.y}` }
+          }
+        },
+        scales: {
+          x: { grid: { color: '#e8f0fc' }, ticks: { color: '#94a3b8', font: { size: 10 }, maxTicksLimit: 8, maxRotation: 0 } },
+          y: { grid: { color: '#e8f0fc' }, ticks: { color: '#94a3b8', font: { size: 10 } } }
+        }
+      }
+    });
+  }
+
+  // Tabula – pēdējie 100 (jaunkārtē uz augšu)
+  const tbody = document.getElementById('meas-tbody');
+  const display = rows.slice(-100).reverse();
+  tbody.innerHTML = display.map(r => {
+    const t = new Date(r.received_at).toLocaleString('lv-LV', { dateStyle: 'short', timeStyle: 'medium' });
+    return `<tr>
+      <td>${t}</td>
+      <td>${escHtml(r.timestamp)}</td>
+      <td>${r.vali}</td>
+      <td>${parseFloat(r.valf).toFixed(4)}</td>
+      <td>${escHtml(r.vals)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function exportMeasurements() {
+  window.location.href = '/api/measurements/export';
+}
 </script>
 
 <!-- Chart.js no CDN -->
