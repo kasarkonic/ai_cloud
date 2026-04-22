@@ -1,8 +1,10 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from datetime import datetime, timezone, timedelta
 import time
 import requests
 import urllib3
+import csv
+import io
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -34,6 +36,10 @@ price_threshold = 60.0
 relay_on = False
 
 NORDPOOL_URL = "https://nordpool.didnt.work/nordpool-lv-excel.csv"
+
+# ─── Mērījumu saglabāšana ─────────────────────────────────────────────────────
+_measurements = []          # saraksts ar dict ierakstiem
+_MAX_MEASUREMENTS = 10000   # limits atmiņas patēriņam
 
 
 def current_slot():
@@ -172,6 +178,67 @@ def handle_data():
     content = request.json
     result = {"status": "success", "processed": content['value'] * 2}
     return jsonify(result)
+
+
+@app.route('/api/measurements', methods=['POST'])
+def handle_measurements_post():
+    """Saņem mērījumu no ierīces un saglabā atmiņā."""
+    global _measurements
+    content = request.get_json(silent=True)
+    if not content:
+        return jsonify({"status": "error", "message": "Invalid JSON"}), 400
+
+    required = {"timestamp", "vali", "valf", "vals"}
+    if not required.issubset(content.keys()):
+        missing = required - content.keys()
+        return jsonify({"status": "error", "message": f"Missing fields: {missing}"}), 400
+
+    record = {
+        "received_at": datetime.now(timezone.utc).isoformat(),
+        "timestamp":   str(content["timestamp"]),
+        "vali":        content["vali"],
+        "valf":        content["valf"],
+        "vals":        str(content["vals"]),
+    }
+
+    _measurements.append(record)
+    if len(_measurements) > _MAX_MEASUREMENTS:
+        _measurements = _measurements[-_MAX_MEASUREMENTS:]
+
+    return jsonify({"status": "ok", "count": len(_measurements)}), 201
+
+
+@app.route('/api/measurements', methods=['GET'])
+def handle_measurements_get():
+    """Atgriež saglabātos mērījumus JSON formātā (pēdējie N ieraksti)."""
+    try:
+        limit = int(request.args.get('limit', 1000))
+    except ValueError:
+        limit = 1000
+    limit = max(1, min(limit, _MAX_MEASUREMENTS))
+
+    data = _measurements[-limit:]
+    return jsonify({"count": len(data), "measurements": data})
+
+
+@app.route('/api/measurements/export', methods=['GET'])
+def handle_measurements_export():
+    """Lejupielādē mērījumus kā CSV failu."""
+    output = io.StringIO()
+    writer = csv.DictWriter(
+        output,
+        fieldnames=["received_at", "timestamp", "vali", "valf", "vals"],
+        lineterminator="\n",
+    )
+    writer.writeheader()
+    writer.writerows(_measurements)
+
+    filename = f"measurements_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 if __name__ == '__main__':
