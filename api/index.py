@@ -240,12 +240,12 @@ def handle_measurements_export():
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
-@app.route('/api/karlis', methods=['GET'])
+@app.route('/karlis', methods=['GET'])
 def get_karlis():
     # render_template automātiski meklē failu "templates" mapē
     return public('karlis.html')
 
-@app.route('/api/karlis1', methods=['GET'])
+@app.route('/karlis1', methods=['GET'])
 def get_karlis1():
     # render_template automātiski meklē failu "templates" mapē
     return public('karlis1.html')
