@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mouse Chase Game</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #111;
+            overflow: hidden;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background-color: #1e1e1e;
+            border: 2px solid #fff;
+            cursor: crosshair;
+        }
+
+        #score {
+            font-size: 20px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🎯 Mouse Chase Game</h1>
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    <div id="score">Click the ball to start!</div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+
+        const ball = {
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: 20,
+            dx: 3,
+            dy: 2
+        };
+
+        let lastClickTime = 0;
+        let gameActive = true;
+
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "#00ffff";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function moveBall() {
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+                ball.dx *= -1;
+            }
+            if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
+                ball.dy *= -1;
+            }
+        }
+
+        canvas.addEventListener("click", (e) => {
+            if (!gameActive) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const dx = mouseX - ball.x;
+            const dy = mouseY - ball.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= ball.radius + 8) {
+                const accuracy = Math.max(0, 100 - Math.floor(distance / ball.radius * 100));
+                scoreDisplay.textContent = `✅ Hit! Accuracy: ${accuracy}%`;
+                ball.dx *= 1.2;
+                ball.dy *= 1.2;
+                ball.radius = Math.max(10, ball.radius - 1);
+            } else {
+                scoreDisplay.textContent = `❌ Miss! Distance: ${Math.floor(distance)}px`;
+            }
+        });
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBall();
+            moveBall();
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+    </script>
+</body>
+
+</html>

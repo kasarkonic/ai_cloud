@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Running Label Game</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(135deg, #89f7fe, #66a6ff);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: crosshair;
+            font-family: Arial, sans-serif;
+        }
+
+        #label {
+            position: absolute;
+            background-color: #ff4757;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 20px;
+            transition: transform 0.1s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="label">Catch me!</div>
+
+    <script>
+        const label = document.getElementById("label");
+        const speed = 150; // pixels per move
+
+        // Center start
+        let x = window.innerWidth / 2;
+        let y = window.innerHeight / 2;
+        label.style.left = x + "px";
+        label.style.top = y + "px";
+
+        document.addEventListener("mousemove", ev => {
+            const rect = label.getBoundingClientRect();
+            const labelX = rect.left + rect.width / 2;
+            const labelY = rect.top + rect.height / 2;
+
+            const dx = ev.clientX - labelX;
+            const dy = ev.clientY - labelY;
+            const dist = Math.hypot(dx, dy);
+
+            // If cursor is close, move away
+            if (dist < 120) {
+                const angle = Math.atan2(dy, dx);
+                x -= Math.cos(angle) * speed;
+                y -= Math.sin(angle) * speed;
+
+                // Keep inside window
+                x = Math.max(0, Math.min(window.innerWidth - rect.width, x));
+                y = Math.max(0, Math.min(window.innerHeight - rect.height, y));
+
+                label.style.left = x + "px";
+                label.style.top = y + "px";
+            }
+        });
+
+        // Resize guard
+        window.addEventListener("resize", () => {
+            x = Math.min(x, window.innerWidth - label.offsetWidth);
+            y = Math.min(y, window.innerHeight - label.offsetHeight);
+        });
+    </script>
+</body>
+
+</html>
