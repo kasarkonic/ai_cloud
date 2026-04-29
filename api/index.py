@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, render_template
 from datetime import datetime, timezone, timedelta
 import time
 import requests
@@ -8,7 +8,7 @@ import io
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='../templates')
 
 # ─── Demo cenas (rezerves, ja Nordpool nav pieejams) ─────────────────────────
 _DEMO_PRICES = [
