@@ -243,12 +243,12 @@ def handle_measurements_export():
 @app.route('/api/karlis', methods=['GET'])
 def get_karlis():
     # render_template automātiski meklē failu "templates" mapē
-    return public('karlis.html')
+    return render_template('karlis.html')
 
 @app.route('/api/karlis1', methods=['GET'])
 def get_karlis1():
     # render_template automātiski meklē failu "templates" mapē
-    return public('karlis1.html')
+    return render_template('karlis1.html')
 
 
 if __name__ == '__main__':
