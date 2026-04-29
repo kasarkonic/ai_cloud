@@ -246,7 +246,7 @@ def get_karlis():
     return public('karlis.html')
 
 @app.route('/api/karlis1', methods=['GET'])
-def get_karlis():
+def get_karlis1():
     # render_template automātiski meklē failu "templates" mapē
     return public('karlis1.html')
 
