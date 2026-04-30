@@ -393,33 +393,32 @@ function parseAfrrRaw(raw) {
 
   // Baltic API formāts: columns + timeseries (tieša pārbaude)
   if ('timeseries' in d) {
-    const colDefs = d.columns || d.headers || [];
-    const rows    = Array.isArray(d.timeseries) ? d.timeseries : [];
+    const ts = Array.isArray(d.timeseries) ? d.timeseries : [];
 
-    // Veido galvenes: "Estonia Upward", "Latvia Downward" u.tml.
-    let headers = colDefs.map(c => {
-      if (typeof c === 'object') {
-        const country = c.group_level_0 || c.group_level || '';
-        const label   = c.label || c.name || c.id || '';
-        return country ? `${country} ${label}` : label;
-      }
-      return String(c);
-    });
+    // Rindas ir {from, to, values:[v0..v5]} — kolonnu secība fiksēta:
+    // values[0]=EE Up, [1]=EE Down, [2]=LV Up, [3]=LV Down, [4]=LT Up, [5]=LT Down
+    const isObjRow = ts.length > 0 && typeof ts[0] === 'object'
+                     && !Array.isArray(ts[0]) && 'values' in ts[0];
 
-    // Ja rindā ir viens elements vairāk nekā kolonnu definīciju — pirmais ir timestamp
-    if (rows.length && rows[0].length === headers.length + 1) {
-      headers = ['Time', ...headers];
+    const headers = ['Time',
+      'Estonia Upward', 'Estonia Downward',
+      'Latvia Upward',  'Latvia Downward',
+      'Lithuania Upward','Lithuania Downward'];
+
+    let rows;
+    if (isObjRow) {
+      rows = ts.map(r => {
+        const t = (r.from || r.to || '').slice(0, 16).replace('T', ' ');
+        return [t, ...(r.values || [])];
+      });
+    } else {
+      rows = ts;
     }
 
     console.log('[aFRR] Galvenes:', headers);
     console.log('[aFRR] Pirmā rinda:', rows[0]);
     return { headers, rows };
   }
-
-  // Citi iespējamie formāti
-  if (d.columns && d.rows)   return { headers: d.columns, rows: d.rows };
-  if (d.headers && d.rows)   return { headers: d.headers, rows: d.rows };
-  if (d.headers && d.data)   return { headers: d.headers, rows: d.data };
 
   if (Array.isArray(d) && d.length && typeof d[0] === 'object' && !Array.isArray(d[0])) {
     const h = Object.keys(d[0]);
@@ -436,37 +435,10 @@ function processData(d) {
   const headers = d.headers || [];
   const rows    = d.rows    || [];
 
-  // Laika kolonna — 0. vai pirmā ar "time/date/timestamp"
-  const tIdx = findCol(headers, ['time','date','timestamp','period']) !== -1
-    ? findCol(headers, ['time','date','timestamp','period'])
-    : 0;
-
-  // LV Upward
-  const upIdx = findCol(headers, [
-    'latvia.*upward',
-    'latvia.*up',
-    'lv.*upward',
-    'lv.*up'
-  ]);
-
-  // LV Downward
-  const dnIdx = findCol(headers, [
-    'latvia.*downward',
-    'latvia.*down',
-    'lv.*downward',
-    'lv.*down'
-  ]);
-
-  // Rezerves indeksi: Baltic aFRR secība ar Time kolonu:
-  // Time(0), EE Up(1), EE Down(2), LV Up(3), LV Down(4), LT Up(5), LT Down(6)
-  // Bez Time kolonnas: EE Up(0), EE Down(1), LV Up(2), LV Down(3), LT Up(4), LT Down(5)
-  const hasTime = tIdx === 0 && headers.length >= 7;
-  const upIdxFinal  = upIdx !== -1 ? upIdx  : (hasTime ? 3 : 2);
-  const dnIdxFinal  = dnIdx !== -1 ? dnIdx  : (hasTime ? 4 : 3);
-
-  // Iezīmēt, kuras kolonnas tiek izmantotas
-  const upLabel = headers[upIdxFinal] || `Kolonna ${upIdxFinal}`;
-  const dnLabel = headers[dnIdxFinal] || `Kolonna ${dnIdxFinal}`;
+  // Fiksēti indeksi: Time(0), EE Up(1), EE Down(2), LV Up(3), LV Down(4), LT Up(5), LT Down(6)
+  const tIdx       = 0;
+  const upIdxFinal = 3;  // Latvia Upward
+  const dnIdxFinal = 4;  // Latvia Downward
 
   // Savākt datus
   const times  = [];
