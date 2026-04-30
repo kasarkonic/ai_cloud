@@ -265,9 +265,9 @@
   <div style="border-top:1px solid var(--border);padding-top:14px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
       <label style="font-size:12px;font-weight:600;color:#7c3aed;">🔋 Akumulātora ietilpība</label>
-      <span id="bat-cap-val" style="font-size:14px;font-weight:700;color:#7c3aed;">100 <span style="font-size:10px;font-weight:400;color:var(--muted)">kWh</span></span>
+      <span id="bat-cap-val" style="font-size:14px;font-weight:700;color:#7c3aed;">1000 <span style="font-size:10px;font-weight:400;color:var(--muted)">kWh</span></span>
     </div>
-    <input type="range" id="bat-cap" min="1" max="1500" step="5" value="100"
+    <input type="range" id="bat-cap" min="1" max="1500" step="5" value="1000"
            style="width:100%;accent-color:#7c3aed;" oninput="onBatteryChange()">
     <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;">
       <span>1 kWh</span><span>1500 kWh</span>
@@ -380,7 +380,7 @@ let batteryChartInst = null;
 let currentDays    = 15;
 let upwardLimit    = 200;
 let downwardLimit  = 100;
-let batteryCapacity = 100;
+let batteryCapacity = 1000;
 let _lastTimes     = [];
 let _lastUpVals    = [];
 let _lastDnVals    = [];
