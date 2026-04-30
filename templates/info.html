@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klienta informācija</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', monospace;
+            color: #e0e0e0;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 255, 200, 0.3);
+            border-radius: 12px;
+            padding: 32px 40px;
+            width: 480px;
+            box-shadow: 0 0 30px rgba(0, 255, 200, 0.1);
+        }
+
+        h2 {
+            margin: 0 0 24px 0;
+            font-size: 20px;
+            color: #00ffc8;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(0, 255, 200, 0.3);
+            padding-bottom: 12px;
+        }
+
+        .field {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            gap: 16px;
+        }
+
+        .label {
+            color: #888;
+            font-size: 13px;
+            white-space: nowrap;
+            padding-top: 2px;
+        }
+
+        .value {
+            font-size: 13px;
+            color: #e0e0e0;
+            text-align: right;
+            word-break: break-word;
+            max-width: 300px;
+        }
+
+        .loading {
+            color: #555;
+            font-style: italic;
+        }
+
+        .error-msg {
+            color: #ff6b6b;
+            font-size: 13px;
+            margin-top: 16px;
+            text-align: center;
+        }
+
+        #map-link {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #map-link a {
+            color: #00ffc8;
+            font-size: 13px;
+            text-decoration: none;
+            border: 1px solid rgba(0, 255, 200, 0.4);
+            padding: 6px 16px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        #map-link a:hover {
+            background: rgba(0, 255, 200, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>&#128205; Klienta informācija</h2>
+
+        <div class="field">
+            <span class="label">Valsts</span>
+            <span class="value loading" id="country">Ielādē...</span>
+        </div>
+        <div class="field">
+            <span class="label">Reģions</span>
+            <span class="value loading" id="region">Ielādē...</span>
+        </div>
+        <div class="field">
+            <span class="label">Pilsēta</span>
+            <span class="value loading" id="city">Ielādē...</span>
+        </div>
+        <div class="field">
+            <span class="label">Platums (lat)</span>
+            <span class="value loading" id="lat">Ielādē...</span>
+        </div>
+        <div class="field">
+            <span class="label">Garums (lon)</span>
+            <span class="value loading" id="lon">Ielādē...</span>
+        </div>
+        <div class="field">
+            <span class="label">Valoda</span>
+            <span class="value loading" id="lang">Ielādē...</span>
+        </div>
+        <div class="field">
+            <span class="label">Pārlūks / ierīce</span>
+            <span class="value loading" id="ua">Ielādē...</span>
+        </div>
+
+        <div id="map-link">
+            <a id="map-anchor" href="#" target="_blank">Skatīt kartē &#10132;</a>
+        </div>
+
+        <div class="error-msg" id="error"></div>
+    </div>
+
+    <script>
+        function set(id, val) {
+            const el = document.getElementById(id);
+            el.textContent = val || '—';
+            el.classList.remove('loading');
+        }
+
+        fetch('/api/client-info')
+            .then(r => {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(d => {
+                set('country', d.country);
+                set('region',  d.region);
+                set('city',    d.city);
+                set('lat',     d.lat);
+                set('lon',     d.lon);
+                set('lang',    d.lang);
+                set('ua',      d.ua);
+
+                if (d.lat && d.lon) {
+                    const link = document.getElementById('map-link');
+                    const anchor = document.getElementById('map-anchor');
+                    anchor.href = `https://www.openstreetmap.org/?mlat=${d.lat}&mlon=${d.lon}&zoom=12`;
+                    link.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                document.querySelectorAll('.loading').forEach(el => {
+                    el.textContent = '—';
+                    el.classList.remove('loading');
+                });
+                document.getElementById('error').textContent = 'Kļūda ielādējot datus: ' + err.message;
+            });
+    </script>
+</body>
+</html>

@@ -251,6 +251,25 @@ def get_karlis1():
     return render_template('karlis1.html')
 
 
+@app.route('/info', methods=['GET'])
+def get_info():
+    return render_template('info.html')
+
+
+@app.route('/api/client-info', methods=['GET'])
+def client_info():
+    return jsonify({
+        "ip":      request.headers.get('X-Forwarded-For', '').split(',')[0].strip(),
+        "country": request.headers.get('X-Vercel-IP-Country'),
+        "region":  request.headers.get('X-Vercel-IP-Country-Region'),
+        "city":    request.headers.get('X-Vercel-IP-City'),
+        "lat":     request.headers.get('X-Vercel-IP-Latitude'),
+        "lon":     request.headers.get('X-Vercel-IP-Longitude'),
+        "ua":      request.headers.get('User-Agent'),
+        "lang":    request.headers.get('Accept-Language'),
+    })
+
+
 if __name__ == '__main__':
     app.run()
 	
