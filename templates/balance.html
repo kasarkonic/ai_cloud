@@ -347,16 +347,32 @@ async function loadData(days) {
   document.getElementById('data-tbody').innerHTML =
     '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--muted)">Ielādē...</td></tr>';
 
+  const url = buildAfrrUrl(days);
+  console.log('[aFRR] Pieprasa URL:', url);
+
   try {
-    const r = await fetch(buildAfrrUrl(days));
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const r = await fetch(url);
+    console.log('[aFRR] Atbilde:', r.status, r.statusText);
+    if (!r.ok) {
+      const body = await r.text();
+      console.error('[aFRR] Kļūdas atbilde:', body.slice(0, 500));
+      throw new Error(`HTTP ${r.status} — ${body.slice(0, 120)}`);
+    }
     const raw = await r.json();
-    const d   = parseAfrrRaw(raw);
+    console.log('[aFRR] JSON saņemts, atslēgas:', Object.keys(raw));
+    const d = parseAfrrRaw(raw);
+    console.log('[aFRR] Galvenes:', d.headers);
+    console.log('[aFRR] Rindu skaits:', d.rows.length);
+
+    if (!d.rows.length) {
+      throw new Error('API atgrieza tukšu datu kopu. Pārbaudiet galvenes: ' + JSON.stringify(d.headers));
+    }
 
     processData(d);
     document.getElementById('last-update').textContent = new Date().toLocaleTimeString('lv-LV');
 
   } catch(e) {
+    console.error('[aFRR] Kļūda:', e);
     const eb = document.getElementById('error-bar');
     eb.textContent = 'Datu ielādes kļūda: ' + e.message;
     eb.style.display = 'block';
@@ -631,7 +647,8 @@ function setStats(upAvg, upMin, upMax, dnAvg, dnMin, dnMax) {
 }
 
 // ── Sākt ──────────────────────────────────────────────────────────────────────
-loadData(15);
+console.log('[aFRR] Lapa ielādēta, sāk datu pieprasījumu...');
+document.addEventListener('DOMContentLoaded', () => loadData(15));
 </script>
 </body>
 </html>
