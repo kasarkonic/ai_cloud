@@ -329,15 +329,28 @@ async function loadDays(days) {
   await loadData(days);
 }
 
+function buildAfrrUrl(days) {
+  const now   = new Date();
+  const end   = now.toISOString().slice(0, 16);           // "2026-04-30T13:00"
+  const start = new Date(now - days * 86400000).toISOString().slice(0, 16);
+  const base  = 'https://api-baltic.transparency-dashboard.eu/api/v1/export';
+  return `${base}?id=local_marginal_price_afrr` +
+         `&start_date=${encodeURIComponent(start)}` +
+         `&end_date=${encodeURIComponent(end)}` +
+         `&output_time_zone=EET&output_format=json&json_header_groups=0`;
+}
+
 async function loadData(days) {
   document.getElementById('error-bar').style.display = 'none';
   setStats('—', '—', '—', '—', '—', '—');
+  document.getElementById('data-tbody').innerHTML =
+    '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--muted)">Ielādē...</td></tr>';
 
   try {
-    const r = await fetch(`/api/afrr?days=${days}`);
-    const d = await r.json();
-
-    if (d.error) throw new Error(d.error);
+    const r = await fetch(buildAfrrUrl(days));
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const raw = await r.json();
+    const d   = parseAfrrRaw(raw);
 
     processData(d);
     document.getElementById('last-update').textContent = new Date().toLocaleTimeString('lv-LV');
@@ -349,6 +362,18 @@ async function loadData(days) {
     document.getElementById('data-tbody').innerHTML =
       '<tr><td colspan="3" style="text-align:center;padding:20px;color:#dc2626">Kļūda ielādējot datus</td></tr>';
   }
+}
+
+function parseAfrrRaw(raw) {
+  if (raw && raw.headers && raw.data)
+    return { headers: raw.headers, rows: raw.data };
+  if (Array.isArray(raw) && raw.length && typeof raw[0] === 'object' && !Array.isArray(raw[0])) {
+    const headers = Object.keys(raw[0]);
+    return { headers, rows: raw.map(r => headers.map(h => r[h])) };
+  }
+  if (Array.isArray(raw) && raw.length && Array.isArray(raw[0]))
+    return { headers: raw[0], rows: raw.slice(1) };
+  return { headers: [], rows: [], raw };
 }
 
 function processData(d) {
