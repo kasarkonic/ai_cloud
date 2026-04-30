@@ -333,7 +333,8 @@ function buildAfrrUrl(days) {
   const now   = new Date();
   const end   = now.toISOString().slice(0, 16);           // "2026-04-30T13:00"
   const start = new Date(now - days * 86400000).toISOString().slice(0, 16);
-  const base  = 'https://api-baltic.transparency-dashboard.eu/api/v1/export';
+  // Izmanto Vercel Edge proxy — apiet CORS un Flask timeout
+  const base  = '/baltic-proxy/api/v1/export';
   return `${base}?id=local_marginal_price_afrr` +
          `&start_date=${encodeURIComponent(start)}` +
          `&end_date=${encodeURIComponent(end)}` +

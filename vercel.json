@@ -1,6 +1,10 @@
 {
     "rewrites": [
         {
+            "source": "/baltic-proxy/:path*",
+            "destination": "https://api-baltic.transparency-dashboard.eu/:path*"
+        },
+        {
             "source": "/(.*)",
             "destination": "/api/index.py"
         }
