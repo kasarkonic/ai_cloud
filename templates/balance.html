@@ -387,25 +387,36 @@ async function loadData(days) {
 }
 
 function parseAfrrRaw(raw) {
-  // Baltic API formāts: { error, data: { columns: [...], timeseries: [[...]] } }
-  const container = (raw && raw.data && typeof raw.data === 'object' && !Array.isArray(raw.data))
-    ? raw.data
-    : raw;
+  // Izvelk data objektu (Baltic API: { error, data: { columns, timeseries } })
+  const d = (raw && raw.data && typeof raw.data === 'object' && !Array.isArray(raw.data))
+    ? raw.data : raw;
 
-  const headers = container.columns  || container.headers || null;
-  const rows    = container.timeseries || container.rows || container.data || null;
-
-  if (headers && rows && Array.isArray(rows))
+  // Baltic API formāts: columns + timeseries (tieša pārbaude)
+  if ('timeseries' in d) {
+    let headers = d.columns || d.headers || [];
+    // columns var būt objektu masīvs [{id,label,...}] — izvelkam label/name/id
+    if (headers.length && typeof headers[0] === 'object') {
+      headers = headers.map(c => c.label || c.name || c.id || String(c));
+    }
+    const rows = Array.isArray(d.timeseries) ? d.timeseries : [];
+    console.log('[aFRR] Galvenes:', headers);
+    console.log('[aFRR] Pirmā rinda:', rows[0]);
     return { headers, rows };
-
-  if (Array.isArray(container) && container.length && typeof container[0] === 'object' && !Array.isArray(container[0])) {
-    const h = Object.keys(container[0]);
-    return { headers: h, rows: container.map(r => h.map(k => r[k])) };
   }
-  if (Array.isArray(container) && container.length && Array.isArray(container[0]))
-    return { headers: container[0], rows: container.slice(1) };
 
-  console.warn('[aFRR] Nezināms JSON formāts! container atslēgas:', Object.keys(container));
+  // Citi iespējamie formāti
+  if (d.columns && d.rows)   return { headers: d.columns, rows: d.rows };
+  if (d.headers && d.rows)   return { headers: d.headers, rows: d.rows };
+  if (d.headers && d.data)   return { headers: d.headers, rows: d.data };
+
+  if (Array.isArray(d) && d.length && typeof d[0] === 'object' && !Array.isArray(d[0])) {
+    const h = Object.keys(d[0]);
+    return { headers: h, rows: d.map(r => h.map(k => r[k])) };
+  }
+  if (Array.isArray(d) && d.length && Array.isArray(d[0]))
+    return { headers: d[0], rows: d.slice(1) };
+
+  console.warn('[aFRR] Nezināms JSON formāts! container atslēgas:', Object.keys(d));
   return { headers: [], rows: [], raw };
 }
 
