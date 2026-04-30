@@ -1,1033 +1,1113 @@
 <!DOCTYPE html>
 <html lang="lv">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>aFRR Latvija · Balansēšanas tirgus</title>
-<style>
-  :root {
-    --bg: #f0f6ff;
-    --surface: #ffffff;
-    --border: #dde6f5;
-    --text: #1e293b;
-    --muted: #64748b;
-    --accent: #3b82f6;
-    --green: #16a34a;
-    --orange: #d97706;
-    --red: #dc2626;
-    --radius: 14px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #fef9c3 100%);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    min-height: 100vh;
-    padding: 16px;
-  }
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-  }
-  h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; color: #1e3a5f; }
-  .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>aFRR Latvija · Balansēšanas tirgus</title>
+  <style>
+    :root {
+      --bg: #f0f6ff;
+      --surface: #ffffff;
+      --border: #dde6f5;
+      --text: #1e293b;
+      --muted: #64748b;
+      --accent: #3b82f6;
+      --green: #16a34a;
+      --orange: #d97706;
+      --red: #dc2626;
+      --radius: 14px;
+    }
 
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px 12px;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(59,130,246,0.07);
-  }
-  .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .stat-value { font-size: 20px; font-weight: 700; line-height: 1.1; }
-  .stat-unit  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  .chart-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(59,130,246,0.07);
-  }
-  .chart-title {
-    font-size: 13px;
-    color: var(--muted);
-    margin-bottom: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 600;
-  }
-  canvas { width: 100% !important; }
+    body {
+      background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #fef9c3 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 16px;
+    }
 
-  .legend {
-    display: flex;
-    gap: 16px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .legend-dot {
-    width: 12px; height: 12px;
-    border-radius: 3px;
-  }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
 
-  /* Dienu slēdzis */
-  .days-row {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-  }
-  .day-btn {
-    padding: 5px 14px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    color: var(--muted);
-    transition: all 0.15s;
-  }
-  .day-btn.active {
-    background: linear-gradient(135deg, #3b82f6, #06b6d4);
-    color: #fff;
-    border-color: transparent;
-    box-shadow: 0 2px 6px rgba(59,130,246,0.3);
-  }
+    h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: #1e3a5f;
+    }
 
-  /* Tabula */
-  .table-wrap {
-    overflow-x: auto;
-    overflow-y: auto;
-    max-height: 260px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    margin-top: 12px;
-  }
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-  }
-  .data-table thead th {
-    background: #f1f5f9;
-    color: var(--muted);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    padding: 8px 10px;
-    text-align: left;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-  }
-  .data-table tbody tr:nth-child(even) { background: #f8fafc; }
-  .data-table tbody td { padding: 6px 10px; white-space: nowrap; }
-  .data-table tbody tr:hover td { background: #e0f2fe; }
-  .td-up   { color: #16a34a; font-weight: 600; }
-  .td-down { color: #d97706; font-weight: 600; }
+    .sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
 
-  .status-bar {
-    text-align: center;
-    font-size: 12px;
-    color: var(--muted);
-    margin: 8px 0;
-  }
-  .error-bar {
-    background: #fef2f2;
-    border: 1px solid #fca5a5;
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 13px;
-    color: var(--red);
-    margin-bottom: 16px;
-    display: none;
-  }
-  footer {
-    text-align: center;
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 8px;
-  }
-</style>
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 12px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.07);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .stat-unit {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.07);
+    }
+
+    .chart-title {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    canvas {
+      width: 100% !important;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    /* Dienu slēdzis */
+    .days-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .day-btn {
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+
+    .day-btn.active {
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Tabula */
+    .table-wrap {
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: 260px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-top: 12px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .data-table thead th {
+      background: #f1f5f9;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      padding: 8px 10px;
+      text-align: left;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .data-table tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    .data-table tbody td {
+      padding: 6px 10px;
+      white-space: nowrap;
+    }
+
+    .data-table tbody tr:hover td {
+      background: #e0f2fe;
+    }
+
+    .td-up {
+      color: #16a34a;
+      font-weight: 600;
+    }
+
+    .td-down {
+      color: #d97706;
+      font-weight: 600;
+    }
+
+    .status-bar {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin: 8px 0;
+    }
+
+    .error-bar {
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--red);
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+  </style>
 </head>
+
 <body>
 
-<header>
-  <div>
-    <h1>⚖️ aFRR · Latvija</h1>
-    <p class="sub">Balansēšanas tirgus · Local Marginal Price</p>
-  </div>
-  <div style="text-align:right">
-    <div style="font-size:11px;color:var(--muted)">Avots</div>
-    <div style="font-size:12px;font-weight:700;color:#3b82f6">Baltic TDB</div>
-  </div>
-</header>
-
-<div class="days-row">
-  <button class="day-btn" onclick="loadDays(3)">3 dienas</button>
-  <button class="day-btn" onclick="loadDays(7)">7 dienas</button>
-  <button class="day-btn active" id="btn-15" onclick="loadDays(15)">15 dienas</button>
-  <button class="day-btn" onclick="loadDays(30)">30 dienas</button>
-</div>
-
-<div class="error-bar" id="error-bar"></div>
-
-<!-- Statistika — Upward -->
-<div style="font-size:12px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
-  ▲ Upward (augšupejošā regulēšana)
-</div>
-<div class="stats" id="stats-up">
-  <div class="stat-card">
-    <div class="stat-label">Vid. Upward</div>
-    <div class="stat-value" id="up-avg" style="color:#16a34a">—</div>
-    <div class="stat-unit">EUR/MWh</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Min Upward</div>
-    <div class="stat-value" id="up-min" style="color:#16a34a">—</div>
-    <div class="stat-unit">EUR/MWh</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Maks Upward</div>
-    <div class="stat-value" id="up-max" style="color:#dc2626">—</div>
-    <div class="stat-unit">EUR/MWh</div>
-  </div>
-</div>
-
-<!-- Statistika — Downward -->
-<div style="font-size:12px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
-  ▼ Downward (lejupejošā regulēšana)
-</div>
-<div class="stats" id="stats-down">
-  <div class="stat-card">
-    <div class="stat-label">Vid. Downward</div>
-    <div class="stat-value" id="dn-avg" style="color:#d97706">—</div>
-    <div class="stat-unit">EUR/MWh</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Min Downward</div>
-    <div class="stat-value" id="dn-min" style="color:#16a34a">—</div>
-    <div class="stat-unit">EUR/MWh</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Maks Downward</div>
-    <div class="stat-value" id="dn-max" style="color:#dc2626">—</div>
-    <div class="stat-unit">EUR/MWh</div>
-  </div>
-</div>
-
-<!-- Limitu slaideri -->
-<div class="chart-card" style="padding:14px 16px;">
-  <div class="chart-title" style="margin-bottom:14px">Limitu iestatījumi</div>
-  <div style="border-bottom:1px solid var(--border);padding-bottom:14px;margin-bottom:14px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <label style="font-size:12px;font-weight:600;color:#7c3aed;">🔋 Akumulātora ietilpība</label>
-      <span id="bat-cap-val" style="font-size:14px;font-weight:700;color:#7c3aed;">1000 <span style="font-size:10px;font-weight:400;color:var(--muted)">kWh</span></span>
-    </div>
-    <input type="range" id="bat-cap" min="1" max="1500" step="5" value="1000"
-           style="width:100%;accent-color:#7c3aed;" oninput="onBatteryChange()">
-    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;">
-      <span>1 kWh</span><span>1500 kWh</span>
-    </div>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+  <header>
     <div>
+      <h1>⚖️ aFRR · Latvija</h1>
+      <p class="sub">Balansēšanas tirgus · Local Marginal Price</p>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:11px;color:var(--muted)">Avots</div>
+      <div style="font-size:12px;font-weight:700;color:#3b82f6">Baltic TDB</div>
+    </div>
+  </header>
+
+  <div class="days-row">
+    <button class="day-btn" onclick="loadDays(3)">3 dienas</button>
+    <button class="day-btn" onclick="loadDays(7)">7 dienas</button>
+    <button class="day-btn active" id="btn-15" onclick="loadDays(15)">15 dienas</button>
+    <button class="day-btn" onclick="loadDays(30)">30 dienas</button>
+  </div>
+
+  <div class="error-bar" id="error-bar"></div>
+
+  <!-- Statistika — Upward -->
+  <div
+    style="font-size:12px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
+    ▲ Upward (augšupejošā regulēšana)
+  </div>
+  <div class="stats" id="stats-up">
+    <div class="stat-card">
+      <div class="stat-label">Vid. Upward</div>
+      <div class="stat-value" id="up-avg" style="color:#16a34a">—</div>
+      <div class="stat-unit">EUR/MWh</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Min Upward</div>
+      <div class="stat-value" id="up-min" style="color:#16a34a">—</div>
+      <div class="stat-unit">EUR/MWh</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Maks Upward</div>
+      <div class="stat-value" id="up-max" style="color:#dc2626">—</div>
+      <div class="stat-unit">EUR/MWh</div>
+    </div>
+  </div>
+
+  <!-- Statistika — Downward -->
+  <div
+    style="font-size:12px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
+    ▼ Downward (lejupejošā regulēšana)
+  </div>
+  <div class="stats" id="stats-down">
+    <div class="stat-card">
+      <div class="stat-label">Vid. Downward</div>
+      <div class="stat-value" id="dn-avg" style="color:#d97706">—</div>
+      <div class="stat-unit">EUR/MWh</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Min Downward</div>
+      <div class="stat-value" id="dn-min" style="color:#16a34a">—</div>
+      <div class="stat-unit">EUR/MWh</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Maks Downward</div>
+      <div class="stat-value" id="dn-max" style="color:#dc2626">—</div>
+      <div class="stat-unit">EUR/MWh</div>
+    </div>
+  </div>
+
+  <!-- Limitu slaideri -->
+  <div class="chart-card" style="padding:14px 16px;">
+    <div class="chart-title" style="margin-bottom:14px">Limitu iestatījumi</div>
+    <div style="border-bottom:1px solid var(--border);padding-bottom:14px;margin-bottom:14px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <label style="font-size:12px;font-weight:600;color:#16a34a;">▲ Upward limit</label>
-        <span id="up-limit-val" style="font-size:14px;font-weight:700;color:#16a34a;">200 <span style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span></span>
+        <label style="font-size:12px;font-weight:600;color:#7c3aed;">🔋 Akumulātora ietilpība</label>
+        <span id="bat-cap-val" style="font-size:14px;font-weight:700;color:#7c3aed;">1000 <span
+            style="font-size:10px;font-weight:400;color:var(--muted)">kWh</span></span>
       </div>
-      <input type="range" id="up-limit" min="0" max="1000" step="5" value="200"
-             style="width:100%;accent-color:#22c55e;" oninput="onLimitChange()">
+      <input type="range" id="bat-cap" min="1" max="1500" step="5" value="1000" style="width:100%;accent-color:#7c3aed;"
+        oninput="onBatteryChange()">
       <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;">
-        <span id="up-limit-min">0</span><span id="up-limit-max">1000</span>
+        <span>1 kWh</span><span>1500 kWh</span>
       </div>
     </div>
-    <div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <label style="font-size:12px;font-weight:600;color:#d97706;">▼ Downward limit</label>
-        <span id="dn-limit-val" style="font-size:14px;font-weight:700;color:#d97706;">100 <span style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span></span>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label style="font-size:12px;font-weight:600;color:#16a34a;">▲ Upward limit</label>
+          <span id="up-limit-val" style="font-size:14px;font-weight:700;color:#16a34a;">200 <span
+              style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span></span>
+        </div>
+        <input type="range" id="up-limit" min="0" max="1000" step="5" value="200"
+          style="width:100%;accent-color:#22c55e;" oninput="onLimitChange()">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;">
+          <span id="up-limit-min">0</span><span id="up-limit-max">1000</span>
+        </div>
       </div>
-      <input type="range" id="dn-limit" min="0" max="1000" step="5" value="100"
-             style="width:100%;accent-color:#f97316;" oninput="onLimitChange()">
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;">
-        <span id="dn-limit-min">0</span><span id="dn-limit-max">1000</span>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label style="font-size:12px;font-weight:600;color:#d97706;">▼ Downward limit</label>
+          <span id="dn-limit-val" style="font-size:14px;font-weight:700;color:#d97706;">100 <span
+              style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span></span>
+        </div>
+        <input type="range" id="dn-limit" min="0" max="1000" step="5" value="100"
+          style="width:100%;accent-color:#f97316;" oninput="onLimitChange()">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;">
+          <span id="dn-limit-min">0</span><span id="dn-limit-max">1000</span>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Grafiks (visi dati) -->
-<div class="chart-card">
-  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
-    <div class="chart-title" style="margin-bottom:0">LV aFRR cenas · 15 min periodi</div>
-    <span id="period-label" style="font-size:12px;font-weight:600;color:#3b82f6">—</span>
-  </div>
-  <!-- Simulācijas kopsavilkums -->
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">
-    <div style="background:#f0fdf4;border-radius:8px;padding:8px 10px;text-align:center;">
-      <div style="font-size:10px;color:#16a34a;font-weight:600;margin-bottom:2px;">Izlādes ienākumi</div>
-      <div id="sim-discharge" style="font-size:15px;font-weight:700;color:#16a34a;">—</div>
+  <!-- Grafiks (visi dati) -->
+  <div class="chart-card">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+      <div class="chart-title" style="margin-bottom:0">LV aFRR cenas · 15 min periodi</div>
+      <span id="period-label" style="font-size:12px;font-weight:600;color:#3b82f6">—</span>
     </div>
-    <div style="background:#eff6ff;border-radius:8px;padding:8px 10px;text-align:center;">
-      <div style="font-size:10px;color:#2563eb;font-weight:600;margin-bottom:2px;">Uzlādes izmaksas</div>
-      <div id="sim-charge" style="font-size:15px;font-weight:700;color:#2563eb;">—</div>
+    <!-- Simulācijas kopsavilkums -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">
+      <div style="background:#f0fdf4;border-radius:8px;padding:8px 10px;text-align:center;">
+        <div style="font-size:10px;color:#16a34a;font-weight:600;margin-bottom:2px;">Izlādes ienākumi</div>
+        <div id="sim-discharge" style="font-size:15px;font-weight:700;color:#16a34a;">—</div>
+      </div>
+      <div style="background:#eff6ff;border-radius:8px;padding:8px 10px;text-align:center;">
+        <div style="font-size:10px;color:#2563eb;font-weight:600;margin-bottom:2px;">Uzlādes izmaksas</div>
+        <div id="sim-charge" style="font-size:15px;font-weight:700;color:#2563eb;">—</div>
+      </div>
+      <div style="background:#fafafa;border-radius:8px;padding:8px 10px;text-align:center;border:1px solid #e2e8f0;">
+        <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:2px;">Kopā bilance</div>
+        <div id="sim-total" style="font-size:15px;font-weight:700;color:#64748b;">—</div>
+      </div>
+      <div style="background:#faf5ff;border-radius:8px;padding:8px 10px;text-align:center;">
+        <div style="font-size:10px;color:#7c3aed;font-weight:600;margin-bottom:2px;">Ciklu skaits</div>
+        <div id="sim-cycles" style="font-size:15px;font-weight:700;color:#7c3aed;">—</div>
+      </div>
     </div>
-    <div style="background:#fafafa;border-radius:8px;padding:8px 10px;text-align:center;border:1px solid #e2e8f0;">
-      <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:2px;">Kopā bilance</div>
-      <div id="sim-total" style="font-size:15px;font-weight:700;color:#64748b;">—</div>
+    <div style="position:relative;height:260px">
+      <canvas id="mainChart"></canvas>
     </div>
-    <div style="background:#faf5ff;border-radius:8px;padding:8px 10px;text-align:center;">
-      <div style="font-size:10px;color:#7c3aed;font-weight:600;margin-bottom:2px;">Ciklu skaits</div>
-      <div id="sim-cycles" style="font-size:15px;font-weight:700;color:#7c3aed;">—</div>
-    </div>
-  </div>
-  <div style="position:relative;height:260px">
-    <canvas id="mainChart"></canvas>
-  </div>
-  <div class="legend">
-    <div class="legend-item">
-      <div class="legend-dot" style="background:#22c55e"></div>
-      LV Upward
-    </div>
-    <div class="legend-item">
-      <div class="legend-dot" style="background:#f97316"></div>
-      LV Downward
-    </div>
-    <div class="legend-item">
-      <div style="width:18px;border-top:2px dashed #16a34a;"></div>
-      Upward limit
-    </div>
-    <div class="legend-item">
-      <div style="width:18px;border-top:2px dashed #d97706;"></div>
-      Downward limit
-    </div>
-  </div>
-</div>
-
-<!-- Izlādes periodi grafiks -->
-<div class="chart-card">
-  <div class="chart-title">Izlādes un uzlādes periodi</div>
-  <div style="position:relative;height:220px">
-    <canvas id="dailyChart"></canvas>
-  </div>
-  <div class="legend">
-    <div class="legend-item">
-      <div class="legend-dot" style="background:#22c55e"></div>
-      Izlāde
-    </div>
-    <div class="legend-item">
-      <div class="legend-dot" style="background:#2563eb"></div>
-      Uzlāde
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#22c55e"></div>
+        LV Upward
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#f97316"></div>
+        LV Downward
+      </div>
+      <div class="legend-item">
+        <div style="width:18px;border-top:2px dashed #16a34a;"></div>
+        Upward limit
+      </div>
+      <div class="legend-item">
+        <div style="width:18px;border-top:2px dashed #d97706;"></div>
+        Downward limit
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Akumulātora enerģija grafiks -->
-<div class="chart-card">
-  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
-    <div class="chart-title" style="margin-bottom:0">Akumulātora enerģija</div>
-    <span id="bat-note" style="font-size:11px;color:var(--muted);">Uzlāde ↓ limits · Izlāde ↑ limits</span>
-  </div>
-  <div style="position:relative;height:220px">
-    <canvas id="batteryChart"></canvas>
-  </div>
-  <div class="legend">
-    <div class="legend-item">
-      <div class="legend-dot" style="background:#7c3aed"></div>
-      SoC %
+  <!-- Izlādes periodi grafiks -->
+  <div class="chart-card">
+    <div class="chart-title">Izlādes un uzlādes periodi</div>
+    <div style="position:relative;height:220px">
+      <canvas id="dailyChart"></canvas>
     </div>
-    <div class="legend-item">
-      <div class="legend-dot" style="background:#a78bfa"></div>
-      Enerģija kWh
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#22c55e"></div>
+        Izlāde
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#2563eb"></div>
+        Uzlāde
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Datu tabula -->
-<div class="chart-card">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-    <div class="chart-title" style="margin-bottom:0">Uzlādes un izlādes cikli</div>
-    <span style="font-size:11px;color:var(--muted)" id="row-count">—</span>
+  <!-- Akumulātora enerģija grafiks -->
+  <div class="chart-card">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+      <div class="chart-title" style="margin-bottom:0">Akumulātora enerģija</div>
+      <span id="bat-note" style="font-size:11px;color:var(--muted);">Uzlāde ↓ limits · Izlāde ↑ limits</span>
+    </div>
+    <div style="position:relative;height:220px">
+      <canvas id="batteryChart"></canvas>
+    </div>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#7c3aed"></div>
+        SoC %
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#a78bfa"></div>
+        Enerģija kWh
+      </div>
+    </div>
   </div>
-  <div class="table-wrap">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Laiks (EET)</th>
-          <th>Cikls</th>
-          <th>Cena EUR / 15 min</th>
-          <th>SoC pēc</th>
-        </tr>
-      </thead>
-      <tbody id="data-tbody">
-        <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Ielādē...</td></tr>
-      </tbody>
-      <tfoot id="data-tfoot"></tfoot>
-    </table>
+
+  <!-- Datu tabula -->
+  <div class="chart-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div class="chart-title" style="margin-bottom:0">Uzlādes un izlādes cikli</div>
+      <span style="font-size:11px;color:var(--muted)" id="row-count">—</span>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Laiks (EET)</th>
+            <th>Cikls</th>
+            <th>Cena EUR / 15 min</th>
+            <th>SoC pēc</th>
+          </tr>
+        </thead>
+        <tbody id="data-tbody">
+          <tr>
+            <td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Ielādē...</td>
+          </tr>
+        </tbody>
+        <tfoot id="data-tfoot"></tfoot>
+      </table>
+    </div>
   </div>
-</div>
 
-<div class="status-bar">Pēdējā atjaunošana: <span id="last-update">—</span></div>
-<footer>Avots: Baltic Transparency Dashboard · api-baltic.transparency-dashboard.eu</footer>
+  <div class="status-bar">Pēdējā atjaunošana: <span id="last-update">—</span></div>
+  <footer>Avots: Baltic Transparency Dashboard · api-baltic.transparency-dashboard.eu</footer>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script>
-let mainChartInst    = null;
-let dailyChartInst   = null;
-let batteryChartInst = null;
-let currentDays    = 15;
-let upwardLimit    = 200;
-let downwardLimit  = 100;
-let batteryCapacity = 1000;
-let _lastTimes     = [];
-let _lastUpVals    = [];
-let _lastDnVals    = [];
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    let mainChartInst = null;
+    let dailyChartInst = null;
+    let batteryChartInst = null;
+    let currentDays = 15;
+    let upwardLimit = 200;
+    let downwardLimit = 100;
+    let batteryCapacity = 1000;
+    let _lastTimes = [];
+    let _lastUpVals = [];
+    let _lastDnVals = [];
 
-// ── Kolonnas atrašana pēc nosaukuma ──────────────────────────────────────────
-function findCol(headers, patterns) {
-  for (const p of patterns) {
-    const re = new RegExp(p, 'i');
-    const idx = headers.findIndex(h => re.test(String(h)));
-    if (idx !== -1) return idx;
-  }
-  return -1;
-}
-
-function safeNum(v) {
-  if (v === null || v === undefined || v === '') return null;
-  const n = parseFloat(v);
-  return isNaN(n) ? null : n;
-}
-
-// ── Datu ielāde ───────────────────────────────────────────────────────────────
-function onLimitChange() {
-  upwardLimit  = parseFloat(document.getElementById('up-limit').value);
-  downwardLimit = parseFloat(document.getElementById('dn-limit').value);
-  document.getElementById('up-limit-val').innerHTML =
-    `${upwardLimit} <span style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span>`;
-  document.getElementById('dn-limit-val').innerHTML =
-    `${downwardLimit} <span style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span>`;
-  if (_lastTimes.length) {
-    const step   = Math.max(1, Math.ceil(_lastTimes.length / 400));
-    const tDecim = _lastTimes.filter((_, i)  => i % step === 0);
-    const uDecim = _lastUpVals.filter((_, i) => i % step === 0);
-    const dDecim = _lastDnVals.filter((_, i) => i % step === 0);
-    drawMain(tDecim, uDecim, dDecim);
-    drawDischargeChart(_lastTimes, _lastUpVals, _lastDnVals);
-    drawBatteryChart(_lastTimes, _lastUpVals, _lastDnVals);
-    fillTable(_lastTimes, _lastUpVals, _lastDnVals);
-  }
-}
-
-function onBatteryChange() {
-  batteryCapacity = parseFloat(document.getElementById('bat-cap').value);
-  document.getElementById('bat-cap-val').innerHTML =
-    `${batteryCapacity} <span style="font-size:10px;font-weight:400;color:var(--muted)">kWh</span>`;
-  if (_lastTimes.length) {
-    drawDischargeChart(_lastTimes, _lastUpVals, _lastDnVals);
-    drawBatteryChart(_lastTimes, _lastUpVals, _lastDnVals);
-    fillTable(_lastTimes, _lastUpVals, _lastDnVals);
-  }
-}
-
-async function loadDays(days) {
-  currentDays = days;
-  document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-  await loadData(days);
-}
-
-function buildAfrrUrl(days) {
-  const now   = new Date();
-  const end   = now.toISOString().slice(0, 16);           // "2026-04-30T13:00"
-  const start = new Date(now - days * 86400000).toISOString().slice(0, 16);
-  // Izmanto Vercel Edge proxy — apiet CORS un Flask timeout
-  const base  = '/baltic-proxy/api/v1/export';
-  return `${base}?id=local_marginal_price_afrr` +
-         `&start_date=${encodeURIComponent(start)}` +
-         `&end_date=${encodeURIComponent(end)}` +
-         `&output_time_zone=EET&output_format=json&json_header_groups=0`;
-}
-
-async function loadData(days) {
-  document.getElementById('error-bar').style.display = 'none';
-  setStats('—', '—', '—', '—', '—', '—');
-  document.getElementById('data-tbody').innerHTML =
-'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Ielādē...</td></tr>';
-
-  const url = buildAfrrUrl(days);
-  console.log('[aFRR] Pieprasa URL:', url);
-
-  try {
-    const r = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0',
+    // ── Kolonnas atrašana pēc nosaukuma ──────────────────────────────────────────
+    function findCol(headers, patterns) {
+      for (const p of patterns) {
+        const re = new RegExp(p, 'i');
+        const idx = headers.findIndex(h => re.test(String(h)));
+        if (idx !== -1) return idx;
       }
-    });
-    console.log('[aFRR] Atbilde:', r.status, r.statusText);
-    if (!r.ok) {
-      const body = await r.text();
-      console.error('[aFRR] Kļūdas atbilde:', body.slice(0, 500));
-      throw new Error(`HTTP ${r.status} — ${body.slice(0, 120)}`);
-    }
-    const raw = await r.json();
-    console.log('[aFRR] JSON saņemts, raw struktūra:', JSON.stringify(raw).slice(0, 400));
-    const d = parseAfrrRaw(raw);
-    console.log('[aFRR] Galvenes:', d.headers);
-    console.log('[aFRR] Rindu skaits:', d.rows.length);
-
-    if (!d.rows.length) {
-      throw new Error('API atgrieza tukšu datu kopu. Pārbaudiet galvenes: ' + JSON.stringify(d.headers));
+      return -1;
     }
 
-    processData(d);
-    document.getElementById('last-update').textContent = new Date().toLocaleTimeString('lv-LV');
+    function safeNum(v) {
+      if (v === null || v === undefined || v === '') return null;
+      const n = parseFloat(v);
+      return isNaN(n) ? null : n;
+    }
 
-  } catch(e) {
-    console.error('[aFRR] Kļūda:', e);
-    const eb = document.getElementById('error-bar');
-    eb.textContent = 'Datu ielādes kļūda: ' + e.message;
-    eb.style.display = 'block';
-    document.getElementById('data-tbody').innerHTML =
-      '<tr><td colspan="5" style="text-align:center;padding:20px;color:#dc2626">Kļūda ielādējot datus</td></tr>';
-  }
-}
+    // ── Datu ielāde ───────────────────────────────────────────────────────────────
+    function onLimitChange() {
+      upwardLimit = parseFloat(document.getElementById('up-limit').value);
+      downwardLimit = parseFloat(document.getElementById('dn-limit').value);
+      document.getElementById('up-limit-val').innerHTML =
+        `${upwardLimit} <span style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span>`;
+      document.getElementById('dn-limit-val').innerHTML =
+        `${downwardLimit} <span style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span>`;
+      if (_lastTimes.length) {
+        const step = Math.max(1, Math.ceil(_lastTimes.length / 400));
+        const tDecim = _lastTimes.filter((_, i) => i % step === 0);
+        const uDecim = _lastUpVals.filter((_, i) => i % step === 0);
+        const dDecim = _lastDnVals.filter((_, i) => i % step === 0);
+        drawMain(tDecim, uDecim, dDecim);
+        drawDischargeChart(_lastTimes, _lastUpVals, _lastDnVals);
+        drawBatteryChart(_lastTimes, _lastUpVals, _lastDnVals);
+        fillTable(_lastTimes, _lastUpVals, _lastDnVals);
+      }
+    }
 
-function parseAfrrRaw(raw) {
-  // Izvelk data objektu (Baltic API: { error, data: { columns, timeseries } })
-  const d = (raw && raw.data && typeof raw.data === 'object' && !Array.isArray(raw.data))
-    ? raw.data : raw;
+    function onBatteryChange() {
+      batteryCapacity = parseFloat(document.getElementById('bat-cap').value);
+      document.getElementById('bat-cap-val').innerHTML =
+        `${batteryCapacity} <span style="font-size:10px;font-weight:400;color:var(--muted)">kWh</span>`;
+      if (_lastTimes.length) {
+        drawDischargeChart(_lastTimes, _lastUpVals, _lastDnVals);
+        drawBatteryChart(_lastTimes, _lastUpVals, _lastDnVals);
+        fillTable(_lastTimes, _lastUpVals, _lastDnVals);
+      }
+    }
 
-  // Baltic API formāts: columns + timeseries (tieša pārbaude)
-  if ('timeseries' in d) {
-    const ts = Array.isArray(d.timeseries) ? d.timeseries : [];
+    async function loadDays(days) {
+      currentDays = days;
+      document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      await loadData(days);
+    }
 
-    // Rindas ir {from, to, values:[v0..v5]} — kolonnu secība fiksēta:
-    // values[0]=EE Up, [1]=EE Down, [2]=LV Up, [3]=LV Down, [4]=LT Up, [5]=LT Down
-    const isObjRow = ts.length > 0 && typeof ts[0] === 'object'
-                     && !Array.isArray(ts[0]) && 'values' in ts[0];
+    function buildAfrrUrl(days) {
+      const now = new Date();
+      const end = now.toISOString().slice(0, 16);           // "2026-04-30T13:00"
+      const start = new Date(now - days * 86400000).toISOString().slice(0, 16);
+      // Izmanto Vercel Edge proxy — apiet CORS un Flask timeout
+      const base = '/baltic-proxy/api/v1/export';
+      return `${base}?id=local_marginal_price_afrr` +
+        `&start_date=${encodeURIComponent(start)}` +
+        `&end_date=${encodeURIComponent(end)}` +
+        `&output_time_zone=EET&output_format=json&json_header_groups=0`;
+    }
 
-    const headers = ['Time',
-      'Estonia Upward', 'Estonia Downward',
-      'Latvia Upward',  'Latvia Downward',
-      'Lithuania Upward','Lithuania Downward'];
+    async function loadData(days) {
+      document.getElementById('error-bar').style.display = 'none';
+      setStats('—', '—', '—', '—', '—', '—');
+      document.getElementById('data-tbody').innerHTML =
+        '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Ielādē...</td></tr>';
 
-    let rows;
-    if (isObjRow) {
-      rows = ts.map(r => {
-        const t = (r.from || r.to || '').slice(0, 16).replace('T', ' ');
-        return [t, ...(r.values || [])];
+      const url = buildAfrrUrl(days);
+      console.log('[aFRR] Pieprasa URL:', url);
+
+      try {
+        const r = await fetch(url, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0',
+          }
+        });
+        console.log('[aFRR] Atbilde:', r.status, r.statusText);
+        if (!r.ok) {
+          const body = await r.text();
+          console.error('[aFRR] Kļūdas atbilde:', body.slice(0, 500));
+          throw new Error(`HTTP ${r.status} — ${body.slice(0, 120)}`);
+        }
+        const raw = await r.json();
+        console.log('[aFRR] JSON saņemts, raw struktūra:', JSON.stringify(raw).slice(0, 400));
+        const d = parseAfrrRaw(raw);
+        console.log('[aFRR] Galvenes:', d.headers);
+        console.log('[aFRR] Rindu skaits:', d.rows.length);
+
+        if (!d.rows.length) {
+          throw new Error('API atgrieza tukšu datu kopu. Pārbaudiet galvenes: ' + JSON.stringify(d.headers));
+        }
+
+        processData(d);
+        document.getElementById('last-update').textContent = new Date().toLocaleTimeString('lv-LV');
+
+      } catch (e) {
+        console.error('[aFRR] Kļūda:', e);
+        const eb = document.getElementById('error-bar');
+        eb.textContent = 'Datu ielādes kļūda: ' + e.message;
+        eb.style.display = 'block';
+        document.getElementById('data-tbody').innerHTML =
+          '<tr><td colspan="5" style="text-align:center;padding:20px;color:#dc2626">Kļūda ielādējot datus</td></tr>';
+      }
+    }
+
+    function parseAfrrRaw(raw) {
+      // Izvelk data objektu (Baltic API: { error, data: { columns, timeseries } })
+      const d = (raw && raw.data && typeof raw.data === 'object' && !Array.isArray(raw.data))
+        ? raw.data : raw;
+
+      // Baltic API formāts: columns + timeseries (tieša pārbaude)
+      if ('timeseries' in d) {
+        const ts = Array.isArray(d.timeseries) ? d.timeseries : [];
+
+        // Rindas ir {from, to, values:[v0..v5]} — kolonnu secība fiksēta:
+        // values[0]=EE Up, [1]=EE Down, [2]=LV Up, [3]=LV Down, [4]=LT Up, [5]=LT Down
+        const isObjRow = ts.length > 0 && typeof ts[0] === 'object'
+          && !Array.isArray(ts[0]) && 'values' in ts[0];
+
+        const headers = ['Time',
+          'Estonia Upward', 'Estonia Downward',
+          'Latvia Upward', 'Latvia Downward',
+          'Lithuania Upward', 'Lithuania Downward'];
+
+        let rows;
+        if (isObjRow) {
+          rows = ts.map(r => {
+            const t = (r.from || r.to || '').slice(0, 16).replace('T', ' ');
+            return [t, ...(r.values || [])];
+          });
+        } else {
+          rows = ts;
+        }
+
+        console.log('[aFRR] Galvenes:', headers);
+        console.log('[aFRR] Pirmā rinda:', rows[0]);
+        return { headers, rows };
+      }
+
+      if (Array.isArray(d) && d.length && typeof d[0] === 'object' && !Array.isArray(d[0])) {
+        const h = Object.keys(d[0]);
+        return { headers: h, rows: d.map(r => h.map(k => r[k])) };
+      }
+      if (Array.isArray(d) && d.length && Array.isArray(d[0]))
+        return { headers: d[0], rows: d.slice(1) };
+
+      console.warn('[aFRR] Nezināms JSON formāts! container atslēgas:', Object.keys(d));
+      return { headers: [], rows: [], raw };
+    }
+
+    function processData(d) {
+      const headers = d.headers || [];
+      const rows = d.rows || [];
+
+      // Fiksēti indeksi: Time(0), EE Up(1), EE Down(2), LV Up(3), LV Down(4), LT Up(5), LT Down(6)
+      const tIdx = 0;
+      const upIdxFinal = 3;  // Latvia Upward
+      const dnIdxFinal = 4;  // Latvia Downward
+
+      // Savākt datus
+      const times = [];
+      const upVals = [];
+      const dnVals = [];
+
+      for (const row of rows) {
+        const t = row[tIdx];
+        const up = safeNum(row[upIdxFinal]);
+        const dn = safeNum(row[dnIdxFinal]);
+        if (t === null || t === undefined) continue;
+        times.push(String(t));
+        upVals.push(up !== null ? Math.max(0, up) : null);
+        dnVals.push(dn !== null ? Math.max(0, dn) : null);
+      }
+
+      // Statistika
+      const upClean = upVals.filter(v => v !== null);
+      const dnClean = dnVals.filter(v => v !== null);
+
+      if (upClean.length) {
+        const avg = v => (v.reduce((a, b) => a + b, 0) / v.length).toFixed(1);
+        const mn = v => Math.min(...v).toFixed(1);
+        const mx = v => Math.max(...v).toFixed(1);
+        setStats(avg(upClean), mn(upClean), mx(upClean),
+          avg(dnClean), mn(dnClean), mx(dnClean));
+      }
+
+      // Perioda uzraksts
+      if (times.length >= 2) {
+        document.getElementById('period-label').textContent =
+          `${times[0].slice(0, 10)} – ${times[times.length - 1].slice(0, 10)}`;
+      }
+
+      // Saglabāt globāli slaideru atjauninājumiem
+      _lastTimes = times;
+      _lastUpVals = upVals;
+      _lastDnVals = dnVals;
+
+      // Atjaunināt slaideru diapazonu pēc datiem
+      const allVals = [...upClean, ...dnClean];
+      if (allVals.length) {
+        const dataMin = Math.floor(Math.min(...allVals) / 5) * 5;
+        const dataMax = Math.ceil(Math.max(...allVals) / 5) * 5;
+        const step = dataMax > 500 ? 10 : 5;
+        ['up-limit', 'dn-limit'].forEach(id => {
+          const el = document.getElementById(id);
+          el.min = dataMin;
+          el.max = dataMax;
+          el.step = step;
+          // Ierobežo pašreizējo vērtību diapazonā
+          el.value = Math.max(dataMin, Math.min(dataMax, parseFloat(el.value)));
+        });
+        document.getElementById('up-limit-min').textContent = dataMin;
+        document.getElementById('up-limit-max').textContent = dataMax;
+        document.getElementById('dn-limit-min').textContent = dataMin;
+        document.getElementById('dn-limit-max').textContent = dataMax;
+        // Atjaunināt JS mainigos un etiķetes
+        upwardLimit = parseFloat(document.getElementById('up-limit').value);
+        downwardLimit = parseFloat(document.getElementById('dn-limit').value);
+        document.getElementById('up-limit-val').innerHTML =
+          `${upwardLimit} <span style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span>`;
+        document.getElementById('dn-limit-val').innerHTML =
+          `${downwardLimit} <span style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span>`;
+      }
+
+      // Galvenais grafiks (decimēts — max 400 punkti)
+      const step = Math.max(1, Math.ceil(times.length / 400));
+      const tDecim = times.filter((_, i) => i % step === 0);
+      const uDecim = upVals.filter((_, i) => i % step === 0);
+      const dDecim = dnVals.filter((_, i) => i % step === 0);
+
+      drawMain(tDecim, uDecim, dDecim);
+
+      // Izlādes periodi grafiks
+      drawDischargeChart(times, upVals, dnVals);
+
+      // Akumulātora enerģija
+      drawBatteryChart(times, upVals, dnVals);
+
+      // Tabula (pēdējie 200)
+      fillTable(times, upVals, dnVals);
+
+      // Rindu skaits
+      document.getElementById('row-count').textContent = `${rows.length} ieraksti`;
+    }
+
+    // ── Galvenais grafiks ─────────────────────────────────────────────────────────
+    function drawMain(labels, upData, dnData) {
+      if (mainChartInst) { mainChartInst.destroy(); mainChartInst = null; }
+
+      const ctx = document.getElementById('mainChart').getContext('2d');
+      mainChartInst = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'LV Upward',
+              data: upData,
+              borderColor: '#22c55e',
+              backgroundColor: 'rgba(34,197,94,0.08)',
+              borderWidth: 1.5,
+              pointRadius: 0,
+              fill: false,
+              tension: 0.2,
+              spanGaps: true,
+            },
+            {
+              label: 'LV Downward',
+              data: dnData,
+              borderColor: '#f97316',
+              backgroundColor: 'rgba(249,115,22,0.08)',
+              borderWidth: 1.5,
+              pointRadius: 0,
+              fill: false,
+              tension: 0.2,
+              spanGaps: true,
+            },
+            {
+              label: 'Upward limit',
+              data: labels.map(() => upwardLimit),
+              borderColor: '#16a34a',
+              borderDash: [6, 3],
+              borderWidth: 1.5,
+              pointRadius: 0,
+              fill: false,
+              tension: 0,
+              spanGaps: true,
+            },
+            {
+              label: 'Downward limit',
+              data: labels.map(() => downwardLimit),
+              borderColor: '#d97706',
+              borderDash: [6, 3],
+              borderWidth: 1.5,
+              pointRadius: 0,
+              fill: false,
+              tension: 0,
+              spanGaps: true,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: items => items[0].label,
+                label: item => {
+                  if (item.dataset.label === 'Upward limit' || item.dataset.label === 'Downward limit') return null;
+                  return `${item.dataset.label}: ${item.raw !== null ? item.raw.toFixed(2) + ' EUR/MWh' : '—'}`;
+                },
+              },
+            },
+          },
+          scales: {
+            x: {
+              ticks: {
+                maxTicksLimit: 10,
+                maxRotation: 0,
+                font: { size: 10 },
+                color: '#94a3b8',
+              },
+              grid: { color: '#f1f5f9' },
+            },
+            y: {
+              afterFit(scale) { scale.width = 62; },
+              ticks: { font: { size: 10 }, color: '#94a3b8' },
+              grid: { color: '#f1f5f9' },
+              title: { display: true, text: 'EUR/MWh', font: { size: 11 }, color: '#94a3b8' },
+            },
+          },
+          layout: { padding: { right: 62 } },
+        },
       });
-    } else {
-      rows = ts;
     }
 
-    console.log('[aFRR] Galvenes:', headers);
-    console.log('[aFRR] Pirmā rinda:', rows[0]);
-    return { headers, rows };
-  }
+    // ── Izlādes periodi grafiks ───────────────────────────────────────────────────
+    function drawDischargeChart(times, upVals, dnVals) {
+      if (dailyChartInst) { dailyChartInst.destroy(); dailyChartInst = null; }
 
-  if (Array.isArray(d) && d.length && typeof d[0] === 'object' && !Array.isArray(d[0])) {
-    const h = Object.keys(d[0]);
-    return { headers: h, rows: d.map(r => h.map(k => r[k])) };
-  }
-  if (Array.isArray(d) && d.length && Array.isArray(d[0]))
-    return { headers: d[0], rows: d.slice(1) };
+      const { isDischarging, isCharging } = computeBattery(times, upVals, dnVals);
 
-  console.warn('[aFRR] Nezināms JSON formāts! container atslēgas:', Object.keys(d));
-  return { headers: [], rows: [], raw };
-}
+      // Nav decimācijas — katrs 15 min slots = viens stabiņš
+      const labels = times;
+      const isDec = isDischarging;
+      const isChr = isCharging;
 
-function processData(d) {
-  const headers = d.headers || [];
-  const rows    = d.rows    || [];
+      // Stabiņa augstums = cena / 4 (EUR par 15 min ciklu), null = dīkstāve
+      const barData = isDec.map((d, i) => d ? (upVals[i] !== null ? +(upVals[i] / 4).toFixed(4) : null)
+        : isChr[i] ? (dnVals[i] !== null ? +(dnVals[i] / 4).toFixed(4) : null)
+          : null);
+      const barColors = isDec.map((d, i) => d ? '#22c55e' : isChr[i] ? '#2563eb' : 'transparent');
 
-  // Fiksēti indeksi: Time(0), EE Up(1), EE Down(2), LV Up(3), LV Down(4), LT Up(5), LT Down(6)
-  const tIdx       = 0;
-  const upIdxFinal = 3;  // Latvia Upward
-  const dnIdxFinal = 4;  // Latvia Downward
-
-  // Savākt datus
-  const times  = [];
-  const upVals = [];
-  const dnVals = [];
-
-  for (const row of rows) {
-    const t  = row[tIdx];
-    const up = safeNum(row[upIdxFinal]);
-    const dn = safeNum(row[dnIdxFinal]);
-    if (t === null || t === undefined) continue;
-    times.push(String(t));
-    upVals.push(up !== null ? Math.max(0, up) : null);
-    dnVals.push(dn !== null ? Math.max(0, dn) : null);
-  }
-
-  // Statistika
-  const upClean = upVals.filter(v => v !== null);
-  const dnClean = dnVals.filter(v => v !== null);
-
-  if (upClean.length) {
-    const avg = v => (v.reduce((a,b) => a+b, 0) / v.length).toFixed(1);
-    const mn  = v => Math.min(...v).toFixed(1);
-    const mx  = v => Math.max(...v).toFixed(1);
-    setStats(avg(upClean), mn(upClean), mx(upClean),
-             avg(dnClean), mn(dnClean), mx(dnClean));
-  }
-
-  // Perioda uzraksts
-  if (times.length >= 2) {
-    document.getElementById('period-label').textContent =
-      `${times[0].slice(0,10)} – ${times[times.length-1].slice(0,10)}`;
-  }
-
-  // Saglabāt globāli slaideru atjauninājumiem
-  _lastTimes  = times;
-  _lastUpVals = upVals;
-  _lastDnVals = dnVals;
-
-  // Atjaunināt slaideru diapazonu pēc datiem
-  const allVals = [...upClean, ...dnClean];
-  if (allVals.length) {
-    const dataMin = Math.floor(Math.min(...allVals) / 5) * 5;
-    const dataMax = Math.ceil(Math.max(...allVals)  / 5) * 5;
-    const step    = dataMax > 500 ? 10 : 5;
-    ['up-limit', 'dn-limit'].forEach(id => {
-      const el = document.getElementById(id);
-      el.min  = dataMin;
-      el.max  = dataMax;
-      el.step = step;
-      // Ierobežo pašreizējo vērtību diapazonā
-      el.value = Math.max(dataMin, Math.min(dataMax, parseFloat(el.value)));
-    });
-    document.getElementById('up-limit-min').textContent = dataMin;
-    document.getElementById('up-limit-max').textContent = dataMax;
-    document.getElementById('dn-limit-min').textContent = dataMin;
-    document.getElementById('dn-limit-max').textContent = dataMax;
-    // Atjaunināt JS mainigos un etiķetes
-    upwardLimit   = parseFloat(document.getElementById('up-limit').value);
-    downwardLimit = parseFloat(document.getElementById('dn-limit').value);
-    document.getElementById('up-limit-val').innerHTML =
-      `${upwardLimit} <span style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span>`;
-    document.getElementById('dn-limit-val').innerHTML =
-      `${downwardLimit} <span style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span>`;
-  }
-
-  // Galvenais grafiks (decimēts — max 400 punkti)
-  const step   = Math.max(1, Math.ceil(times.length / 400));
-  const tDecim = times.filter((_, i)  => i % step === 0);
-  const uDecim = upVals.filter((_, i) => i % step === 0);
-  const dDecim = dnVals.filter((_, i) => i % step === 0);
-
-  drawMain(tDecim, uDecim, dDecim);
-
-  // Izlādes periodi grafiks
-  drawDischargeChart(times, upVals, dnVals);
-
-  // Akumulātora enerģija
-  drawBatteryChart(times, upVals, dnVals);
-
-  // Tabula (pēdējie 200)
-  fillTable(times, upVals, dnVals);
-
-  // Rindu skaits
-  document.getElementById('row-count').textContent = `${rows.length} ieraksti`;
-}
-
-// ── Galvenais grafiks ─────────────────────────────────────────────────────────
-function drawMain(labels, upData, dnData) {
-  if (mainChartInst) { mainChartInst.destroy(); mainChartInst = null; }
-
-  const ctx = document.getElementById('mainChart').getContext('2d');
-  mainChartInst = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'LV Upward',
-          data: upData,
-          borderColor: '#22c55e',
-          backgroundColor: 'rgba(34,197,94,0.08)',
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: false,
-          tension: 0.2,
-          spanGaps: true,
+      const canvasCtx = document.getElementById('dailyChart').getContext('2d');
+      dailyChartInst = new Chart(canvasCtx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Cikls',
+              data: barData,
+              backgroundColor: barColors,
+              borderColor: barColors,
+              borderWidth: 0,
+              borderRadius: 2,
+            },
+          ],
         },
-        {
-          label: 'LV Downward',
-          data: dnData,
-          borderColor: '#f97316',
-          backgroundColor: 'rgba(249,115,22,0.08)',
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: false,
-          tension: 0.2,
-          spanGaps: true,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: items => items[0].label,
+                label: item => {
+                  if (item.raw === null) return null;
+                  const type = isDec[item.dataIndex] ? '⚡ Izlāde' : '🔋 Uzlāde';
+                  return `${type}: ${item.raw.toFixed(2)} EUR`;
+                },
+              },
+            },
+          },
+          scales: {
+            x: {
+              ticks: { maxTicksLimit: 10, maxRotation: 0, font: { size: 10 }, color: '#94a3b8' },
+              grid: { display: false },
+            },
+            y: {
+              afterFit(scale) { scale.width = 62; },
+              ticks: { font: { size: 10 }, color: '#94a3b8', callback: v => v + ' EUR' },
+              grid: { color: '#f1f5f9' },
+              title: { display: true, text: 'EUR / 15 min', font: { size: 11 }, color: '#94a3b8' },
+            },
+          },
+          layout: { padding: { right: 62 } },
         },
-        {
-          label: 'Upward limit',
-          data: labels.map(() => upwardLimit),
-          borderColor: '#16a34a',
-          borderDash: [6, 3],
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: false,
-          tension: 0,
-          spanGaps: true,
+      });
+    }
+
+    // ── Akumulātora simulācija ───────────────────────────────────────────────────
+    function computeBattery(times, upVals, dnVals) {
+      const minSoC = 0.20;
+      const maxSoC = 0.80;
+      const dischargePerSlot = 0.30;  // 25% + 5% losses
+      const chargePerSlot = 0.20;  // 25% - 5% losses
+
+      let soc = 0.50;
+      let dischargeLeft = 0;
+      let chargeLeft = 0;
+
+      const socPct = [], socKwh = [], isDischarging = [], isCharging = [];
+
+      for (let i = 0; i < times.length; i++) {
+        const up = upVals[i];
+        const dn = dnVals[i];
+
+        if (dischargeLeft > 0) {
+          soc = Math.max(minSoC, soc - dischargePerSlot);
+          dischargeLeft--;
+          isDischarging.push(true); isCharging.push(false);
+
+        } else if (chargeLeft > 0) {
+          soc = Math.min(maxSoC, soc + chargePerSlot);
+          chargeLeft--;
+          isDischarging.push(false); isCharging.push(true);
+
+        } else if (up !== null && up > upwardLimit) {
+          const affordable = Math.floor((soc - minSoC) / dischargePerSlot);
+          if (affordable >= 1) {
+            let lookAhead = 0;
+            for (let j = i; j < Math.min(i + 4, times.length); j++) {
+              if (upVals[j] !== null && upVals[j] > upwardLimit) lookAhead++;
+              else break;
+            }
+            const nSlots = Math.min(lookAhead, affordable, 4);
+            dischargeLeft = nSlots - 1;
+            soc = Math.max(minSoC, soc - dischargePerSlot);
+            isDischarging.push(true); isCharging.push(false);
+          } else {
+            isDischarging.push(false); isCharging.push(false);
+          }
+
+        } else if (dn !== null && dn > downwardLimit) {
+          const affordable = Math.floor((maxSoC - soc) / chargePerSlot);
+          if (affordable >= 1) {
+            let lookAhead = 0;
+            for (let j = i; j < Math.min(i + 4, times.length); j++) {
+              if (dnVals[j] !== null && dnVals[j] > downwardLimit) lookAhead++;
+              else break;
+            }
+            const nSlots = Math.min(lookAhead, affordable, 4);
+            chargeLeft = nSlots - 1;
+            soc = Math.min(maxSoC, soc + chargePerSlot);
+            isDischarging.push(false); isCharging.push(true);
+          } else {
+            isDischarging.push(false); isCharging.push(false);
+          }
+
+        } else {
+          isDischarging.push(false); isCharging.push(false);
+        }
+
+        socPct.push(+(soc * 100).toFixed(1));
+        socKwh.push(+(soc * batteryCapacity).toFixed(2));
+      }
+
+      return { socPct, socKwh, isDischarging, isCharging };
+    }
+
+    function drawBatteryChart(times, upVals, dnVals) {
+      if (batteryChartInst) { batteryChartInst.destroy(); batteryChartInst = null; }
+
+      const { socPct, socKwh, isDischarging, isCharging } = computeBattery(times, upVals, dnVals);
+
+      // Nav decimācijas — pilns datu masīvs precīzai krāsošanai
+      const labels = times;
+      const pctD = socPct;
+      const kwhD = socKwh;
+      const isDec = isDischarging;
+      const isChr = isCharging;
+
+      const ctx = document.getElementById('batteryChart').getContext('2d');
+      batteryChartInst = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'SoC %',
+              data: pctD,
+              segment: {
+                borderColor: (ctx) => isDec[ctx.p1DataIndex] ? '#16a34a'
+                  : isChr[ctx.p1DataIndex] ? '#2563eb'
+                    : '#7c3aed',
+              },
+              backgroundColor: 'rgba(124,58,237,0.06)',
+              borderWidth: 2,
+              pointRadius: 0,
+              fill: true,
+              tension: 0.2,
+              spanGaps: true,
+              yAxisID: 'yPct',
+            },
+            {
+              label: 'Enerģija kWh',
+              data: kwhD,
+              segment: {
+                borderColor: (ctx) => isDec[ctx.p1DataIndex] ? 'rgba(34,197,94,0.7)'
+                  : isChr[ctx.p1DataIndex] ? 'rgba(37,99,235,0.6)'
+                    : '#a78bfa',
+              },
+              backgroundColor: 'transparent',
+              borderWidth: 1.5,
+              borderDash: [4, 3],
+              pointRadius: 0,
+              fill: false,
+              tension: 0.2,
+              spanGaps: true,
+              yAxisID: 'yKwh',
+            },
+          ],
         },
-        {
-          label: 'Downward limit',
-          data: labels.map(() => downwardLimit),
-          borderColor: '#d97706',
-          borderDash: [6, 3],
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: false,
-          tension: 0,
-          spanGaps: true,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: items => items[0].label,
-            label: item => {
-              if (item.dataset.label === 'Upward limit' || item.dataset.label === 'Downward limit') return null;
-              return `${item.dataset.label}: ${item.raw !== null ? item.raw.toFixed(2) + ' EUR/MWh' : '—'}`;
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: item => item.dataset.label === 'SoC %'
+                  ? `SoC: ${item.raw !== null ? item.raw.toFixed(1) + ' %' : '—'}`
+                  : `Enerģija: ${item.raw !== null ? item.raw.toFixed(2) + ' kWh' : '—'}`,
+              },
+            },
+          },
+          scales: {
+            x: {
+              ticks: { maxTicksLimit: 10, maxRotation: 0, font: { size: 10 }, color: '#94a3b8' },
+              grid: { color: '#f1f5f9' },
+            },
+            yPct: {
+              position: 'left',
+              min: 0, max: 100,
+              afterFit(scale) { scale.width = 62; },
+              ticks: {
+                font: { size: 10 }, color: '#7c3aed',
+                callback: v => v + '%'
+              },
+              grid: { color: '#f3f0ff' },
+              title: { display: true, text: 'SoC %', font: { size: 11 }, color: '#7c3aed' },
+            },
+            yKwh: {
+              position: 'right',
+              min: 0,
+              max: batteryCapacity,
+              afterFit(scale) { scale.width = 62; },
+              ticks: {
+                font: { size: 10 }, color: '#a78bfa',
+                callback: v => v + ' kWh'
+              },
+              grid: { drawOnChartArea: false },
+              title: { display: true, text: 'kWh', font: { size: 11 }, color: '#a78bfa' },
             },
           },
         },
-      },
-      scales: {
-        x: {
-          ticks: {
-            maxTicksLimit: 10,
-            maxRotation: 0,
-            font: { size: 10 },
-            color: '#94a3b8',
-          },
-          grid: { color: '#f1f5f9' },
-        },
-        y: {
-          afterFit(scale) { scale.width = 62; },
-          ticks: { font: { size: 10 }, color: '#94a3b8' },
-          grid: { color: '#f1f5f9' },
-          title: { display: true, text: 'EUR/MWh', font: { size: 11 }, color: '#94a3b8' },
-        },
-      },
-      layout: { padding: { right: 62 } },
-    },
-  });
-}
-
-// ── Izlādes periodi grafiks ───────────────────────────────────────────────────
-function drawDischargeChart(times, upVals, dnVals) {
-  if (dailyChartInst) { dailyChartInst.destroy(); dailyChartInst = null; }
-
-  const { isDischarging, isCharging } = computeBattery(times, upVals, dnVals);
-
-  // Nav decimācijas — katrs 15 min slots = viens stabiņš
-  const labels    = times;
-  const isDec     = isDischarging;
-  const isChr     = isCharging;
-
-  // Stabiņa augstums = cena / 4 (EUR par 15 min ciklu), null = dīkstāve
-  const barData   = isDec.map((d, i) => d ? (upVals[i]  !== null ? +(upVals[i]  / 4).toFixed(4) : null)
-                                          : isChr[i] ? (dnVals[i] !== null ? +(dnVals[i] / 4).toFixed(4) : null)
-                                          : null);
-  const barColors = isDec.map((d, i) => d ? '#22c55e' : isChr[i] ? '#2563eb' : 'transparent');
-
-  const canvasCtx = document.getElementById('dailyChart').getContext('2d');
-  dailyChartInst = new Chart(canvasCtx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'Cikls',
-          data: barData,
-          backgroundColor: barColors,
-          borderColor: barColors,
-          borderWidth: 0,
-          borderRadius: 2,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: items => items[0].label,
-            label: item => {
-              if (item.raw === null) return null;
-              const type = isDec[item.dataIndex] ? '⚡ Izlāde' : '🔋 Uzlāde';
-              return `${type}: ${item.raw.toFixed(2)} EUR`;
-            },
-          },
-        },
-      },
-      scales: {
-        x: {
-          ticks: { maxTicksLimit: 10, maxRotation: 0, font: { size: 10 }, color: '#94a3b8' },
-          grid: { display: false },
-        },
-        y: {
-          afterFit(scale) { scale.width = 62; },
-          ticks: { font: { size: 10 }, color: '#94a3b8', callback: v => v + ' EUR' },
-          grid: { color: '#f1f5f9' },
-          title: { display: true, text: 'EUR / 15 min', font: { size: 11 }, color: '#94a3b8' },
-        },
-      },
-      layout: { padding: { right: 62 } },
-    },
-  });
-}
-
-// ── Akumulātora simulācija ───────────────────────────────────────────────────
-function computeBattery(times, upVals, dnVals) {
-  const minSoC           = 0.20;
-  const maxSoC           = 0.80;
-  const dischargePerSlot = 0.30;  // 25% + 5% losses
-  const chargePerSlot    = 0.20;  // 25% - 5% losses
-
-  let soc           = 0.50;
-  let dischargeLeft = 0;
-  let chargeLeft    = 0;
-
-  const socPct = [], socKwh = [], isDischarging = [], isCharging = [];
-
-  for (let i = 0; i < times.length; i++) {
-    const up = upVals[i];
-    const dn = dnVals[i];
-
-    if (dischargeLeft > 0) {
-      soc = Math.max(minSoC, soc - dischargePerSlot);
-      dischargeLeft--;
-      isDischarging.push(true); isCharging.push(false);
-
-    } else if (chargeLeft > 0) {
-      soc = Math.min(maxSoC, soc + chargePerSlot);
-      chargeLeft--;
-      isDischarging.push(false); isCharging.push(true);
-
-    } else if (up !== null && up > upwardLimit) {
-      const affordable = Math.floor((soc - minSoC) / dischargePerSlot);
-      if (affordable >= 1) {
-        let lookAhead = 0;
-        for (let j = i; j < Math.min(i + 4, times.length); j++) {
-          if (upVals[j] !== null && upVals[j] > upwardLimit) lookAhead++;
-          else break;
-        }
-        const nSlots = Math.min(lookAhead, affordable, 4);
-        dischargeLeft = nSlots - 1;
-        soc = Math.max(minSoC, soc - dischargePerSlot);
-        isDischarging.push(true); isCharging.push(false);
-      } else {
-        isDischarging.push(false); isCharging.push(false);
-      }
-
-    } else if (dn !== null && dn < downwardLimit) {
-      const affordable = Math.floor((maxSoC - soc) / chargePerSlot);
-      if (affordable >= 1) {
-        let lookAhead = 0;
-        for (let j = i; j < Math.min(i + 4, times.length); j++) {
-          if (dnVals[j] !== null && dnVals[j] < downwardLimit) lookAhead++;
-          else break;
-        }
-        const nSlots = Math.min(lookAhead, affordable, 4);
-        chargeLeft = nSlots - 1;
-        soc = Math.min(maxSoC, soc + chargePerSlot);
-        isDischarging.push(false); isCharging.push(true);
-      } else {
-        isDischarging.push(false); isCharging.push(false);
-      }
-
-    } else {
-      isDischarging.push(false); isCharging.push(false);
+      });
     }
 
-    socPct.push(+(soc * 100).toFixed(1));
-    socKwh.push(+(soc * batteryCapacity).toFixed(2));
-  }
+    // ── Tabula ────────────────────────────────────────────────────────────────────
+    function fillTable(times, upVals, dnVals) {
+      const tbody = document.getElementById('data-tbody');
+      const tfoot = document.getElementById('data-tfoot');
 
-  return { socPct, socKwh, isDischarging, isCharging };
-}
+      const { isDischarging, isCharging, socPct } = computeBattery(times, upVals, dnVals);
 
-function drawBatteryChart(times, upVals, dnVals) {
-  if (batteryChartInst) { batteryChartInst.destroy(); batteryChartInst = null; }
+      let html = '';
+      let n = 0;
+      let sumCharge = 0;
+      let sumDischarge = 0;
 
-  const { socPct, socKwh, isDischarging, isCharging } = computeBattery(times, upVals, dnVals);
+      for (let i = 0; i < times.length; i++) {
+        if (!isDischarging[i] && !isCharging[i]) continue;
+        n++;
+        const isD = isDischarging[i];
+        const price = isD ? upVals[i] : dnVals[i];
+        const eur = price !== null ? price / 4 : null;
+        const soc = socPct[i];
+        if (eur !== null) { isD ? sumDischarge += eur : sumCharge += eur; }
 
-  // Nav decimācijas — pilns datu masīvs precīzai krāsošanai
-  const labels = times;
-  const pctD   = socPct;
-  const kwhD   = socKwh;
-  const isDec  = isDischarging;
-  const isChr  = isCharging;
+        const typeLabel = isD
+          ? '<span style="color:#16a34a;font-weight:600">⚡ Izlāde</span>'
+          : '<span style="color:#2563eb;font-weight:600">🔋 Uzlāde</span>';
+        const eurStr = eur !== null ? eur.toFixed(2) + ' EUR' : '—';
+        const socStr = soc !== null ? soc.toFixed(1) + ' %' : '—';
 
-  const ctx = document.getElementById('batteryChart').getContext('2d');
-  batteryChartInst = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'SoC %',
-          data: pctD,
-          segment: {
-            borderColor: (ctx) => isDec[ctx.p1DataIndex] ? '#16a34a'
-                                : isChr[ctx.p1DataIndex] ? '#2563eb'
-                                : '#7c3aed',
-          },
-          backgroundColor: 'rgba(124,58,237,0.06)',
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: true,
-          tension: 0.2,
-          spanGaps: true,
-          yAxisID: 'yPct',
-        },
-        {
-          label: 'Enerģija kWh',
-          data: kwhD,
-          segment: {
-            borderColor: (ctx) => isDec[ctx.p1DataIndex] ? 'rgba(34,197,94,0.7)'
-                                : isChr[ctx.p1DataIndex] ? 'rgba(37,99,235,0.6)'
-                                : '#a78bfa',
-          },
-          backgroundColor: 'transparent',
-          borderWidth: 1.5,
-          borderDash: [4, 3],
-          pointRadius: 0,
-          fill: false,
-          tension: 0.2,
-          spanGaps: true,
-          yAxisID: 'yKwh',
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: item => item.dataset.label === 'SoC %'
-              ? `SoC: ${item.raw !== null ? item.raw.toFixed(1) + ' %' : '—'}`
-              : `Enerģija: ${item.raw !== null ? item.raw.toFixed(2) + ' kWh' : '—'}`,
-          },
-        },
-      },
-      scales: {
-        x: {
-          ticks: { maxTicksLimit: 10, maxRotation: 0, font: { size: 10 }, color: '#94a3b8' },
-          grid: { color: '#f1f5f9' },
-        },
-        yPct: {
-          position: 'left',
-          min: 0, max: 100,
-          afterFit(scale) { scale.width = 62; },
-          ticks: { font: { size: 10 }, color: '#7c3aed',
-                   callback: v => v + '%' },
-          grid: { color: '#f3f0ff' },
-          title: { display: true, text: 'SoC %', font: { size: 11 }, color: '#7c3aed' },
-        },
-        yKwh: {
-          position: 'right',
-          min: 0,
-          max: batteryCapacity,
-          afterFit(scale) { scale.width = 62; },
-          ticks: { font: { size: 10 }, color: '#a78bfa',
-                   callback: v => v + ' kWh' },
-          grid: { drawOnChartArea: false },
-          title: { display: true, text: 'kWh', font: { size: 11 }, color: '#a78bfa' },
-        },
-      },
-    },
-  });
-}
-
-// ── Tabula ────────────────────────────────────────────────────────────────────
-function fillTable(times, upVals, dnVals) {
-  const tbody = document.getElementById('data-tbody');
-  const tfoot = document.getElementById('data-tfoot');
-
-  const { isDischarging, isCharging, socPct } = computeBattery(times, upVals, dnVals);
-
-  let html        = '';
-  let n           = 0;
-  let sumCharge   = 0;
-  let sumDischarge = 0;
-
-  for (let i = 0; i < times.length; i++) {
-    if (!isDischarging[i] && !isCharging[i]) continue;
-    n++;
-    const isD    = isDischarging[i];
-    const price  = isD ? upVals[i] : dnVals[i];
-    const eur    = price !== null ? price / 4 : null;
-    const soc    = socPct[i];
-    if (eur !== null) { isD ? sumDischarge += eur : sumCharge += eur; }
-
-    const typeLabel = isD
-      ? '<span style="color:#16a34a;font-weight:600">⚡ Izlāde</span>'
-      : '<span style="color:#2563eb;font-weight:600">🔋 Uzlāde</span>';
-    const eurStr   = eur   !== null ? eur.toFixed(2)   + ' EUR'     : '—';
-    const socStr   = soc   !== null ? soc.toFixed(1)   + ' %'       : '—';
-
-    html += `<tr>
+        html += `<tr>
       <td>${n}</td>
       <td>${times[i]}</td>
       <td>${typeLabel}</td>
       <td style="text-align:right">${eurStr}</td>
       <td style="text-align:right">${socStr}</td>
     </tr>`;
-  }
+      }
 
-  document.getElementById('sim-discharge').textContent = sumDischarge.toFixed(2) + ' EUR';
-  document.getElementById('sim-charge').textContent    = sumCharge.toFixed(2) + ' EUR';
-  const total = sumDischarge + sumCharge;
-  const simTotalEl = document.getElementById('sim-total');
-  simTotalEl.textContent = (total >= 0 ? '+' : '') + total.toFixed(2) + ' EUR';
-  simTotalEl.style.color = total >= 0 ? '#16a34a' : '#ef4444';
-  document.getElementById('sim-cycles').textContent = n + ' cikli';
+      document.getElementById('sim-discharge').textContent = sumDischarge.toFixed(2) + ' EUR';
+      document.getElementById('sim-charge').textContent = sumCharge.toFixed(2) + ' EUR';
+      const total = sumDischarge + sumCharge;
+      const simTotalEl = document.getElementById('sim-total');
+      simTotalEl.textContent = (total >= 0 ? '+' : '') + total.toFixed(2) + ' EUR';
+      simTotalEl.style.color = total >= 0 ? '#16a34a' : '#ef4444';
+      document.getElementById('sim-cycles').textContent = n + ' cikli';
 
-  tbody.innerHTML = html || `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Nav ciklu</td></tr>`;
+      tbody.innerHTML = html || `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Nav ciklu</td></tr>`;
 
-  tfoot.innerHTML = `
+      tfoot.innerHTML = `
     <tr style="border-top:2px solid #e2e8f0;font-weight:600">
       <td colspan="3" style="text-align:right;padding-top:6px">Kopā izlāde:</td>
       <td style="text-align:right;color:#16a34a;padding-top:6px">${sumDischarge.toFixed(2)} EUR</td>
@@ -1044,22 +1124,23 @@ function fillTable(times, upVals, dnVals) {
       <td></td>
     </tr>`;
 
-  document.getElementById('row-count').textContent = `${n} cikli`;
-}
+      document.getElementById('row-count').textContent = `${n} cikli`;
+    }
 
-// ── Statistikas attēlošana ────────────────────────────────────────────────────
-function setStats(upAvg, upMin, upMax, dnAvg, dnMin, dnMax) {
-  document.getElementById('up-avg').textContent = upAvg;
-  document.getElementById('up-min').textContent = upMin;
-  document.getElementById('up-max').textContent = upMax;
-  document.getElementById('dn-avg').textContent = dnAvg;
-  document.getElementById('dn-min').textContent = dnMin;
-  document.getElementById('dn-max').textContent = dnMax;
-}
+    // ── Statistikas attēlošana ────────────────────────────────────────────────────
+    function setStats(upAvg, upMin, upMax, dnAvg, dnMin, dnMax) {
+      document.getElementById('up-avg').textContent = upAvg;
+      document.getElementById('up-min').textContent = upMin;
+      document.getElementById('up-max').textContent = upMax;
+      document.getElementById('dn-avg').textContent = dnAvg;
+      document.getElementById('dn-min').textContent = dnMin;
+      document.getElementById('dn-max').textContent = dnMax;
+    }
 
-// ── Sākt ──────────────────────────────────────────────────────────────────────
-console.log('[aFRR] Lapa ielādēta, sāk datu pieprasījumu...');
-document.addEventListener('DOMContentLoaded', () => loadData(15));
-</script>
+    // ── Sākt ──────────────────────────────────────────────────────────────────────
+    console.log('[aFRR] Lapa ielādēta, sāk datu pieprasījumu...');
+    document.addEventListener('DOMContentLoaded', () => loadData(15));
+  </script>
 </body>
+
 </html>
