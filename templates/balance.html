@@ -247,7 +247,7 @@
       <input type="range" id="up-limit" min="0" max="1000" step="5" value="200"
              style="width:100%;accent-color:#22c55e;" oninput="onLimitChange()">
       <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;">
-        <span>0</span><span id="up-limit-max">1000</span>
+        <span id="up-limit-min">0</span><span id="up-limit-max">1000</span>
       </div>
     </div>
     <div>
@@ -258,7 +258,7 @@
       <input type="range" id="dn-limit" min="0" max="1000" step="5" value="100"
              style="width:100%;accent-color:#f97316;" oninput="onLimitChange()">
       <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;">
-        <span>0</span><span id="dn-limit-max">1000</span>
+        <span id="dn-limit-min">0</span><span id="dn-limit-max">1000</span>
       </div>
     </div>
   </div>
@@ -287,11 +287,11 @@
   <div class="legend">
     <div class="legend-item">
       <div class="legend-dot" style="background:#22c55e"></div>
-      LV Upward
+      Izlāde (Upward)
     </div>
     <div class="legend-item">
-      <div class="legend-dot" style="background:#f97316"></div>
-      LV Downward
+      <div class="legend-dot" style="background:#2563eb"></div>
+      Uzlāde (Downward)
     </div>
     <div class="legend-item">
       <div style="width:18px;border-top:2px dashed #16a34a;"></div>
@@ -306,7 +306,7 @@
 
 <!-- Izlādes periodi grafiks -->
 <div class="chart-card">
-  <div class="chart-title">Izlādes periodi · LV Upward</div>
+  <div class="chart-title">Izlādes un uzlādes periodi</div>
   <div style="position:relative;height:220px">
     <canvas id="dailyChart"></canvas>
   </div>
@@ -317,11 +317,23 @@
     </div>
     <div class="legend-item">
       <div class="legend-dot" style="background:rgba(34,197,94,0.25)"></div>
-      Cena virs limita (nav kapacitātes)
+      Upward virs limita (nav kapacitātes)
     </div>
     <div class="legend-item">
       <div style="width:18px;border-top:2px dashed #16a34a;"></div>
       Upward limit
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#2563eb"></div>
+      Akumulātors uzlādējas
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:rgba(249,115,22,0.25)"></div>
+      Downward zem limita (nav kapacitātes)
+    </div>
+    <div class="legend-item">
+      <div style="width:18px;border-top:2px dashed #d97706;"></div>
+      Downward limit
     </div>
   </div>
 </div>
@@ -329,7 +341,7 @@
 <!-- Akumulātora enerģija grafiks -->
 <div class="chart-card">
   <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
-    <div class="chart-title" style="margin-bottom:0">Akumulātora enerģija · simulācija</div>
+    <div class="chart-title" style="margin-bottom:0">Akumulātora enerģija</div>
     <span id="bat-note" style="font-size:11px;color:var(--muted);">Uzlāde ↓ limits · Izlāde ↑ limits</span>
   </div>
   <div style="position:relative;height:220px">
@@ -414,7 +426,10 @@ function onLimitChange() {
     const tDecim = _lastTimes.filter((_, i)  => i % step === 0);
     const uDecim = _lastUpVals.filter((_, i) => i % step === 0);
     const dDecim = _lastDnVals.filter((_, i) => i % step === 0);
-    drawMain(tDecim, uDecim, dDecim);
+    const { isDischarging, isCharging } = computeBattery(_lastTimes, _lastUpVals, _lastDnVals);
+    const isDDec = isDischarging.filter((_, i) => i % step === 0);
+    const isCDec = isCharging.filter((_, i)    => i % step === 0);
+    drawMain(tDecim, uDecim, dDecim, isDDec, isCDec);
     drawDischargeChart(_lastTimes, _lastUpVals, _lastDnVals);
     drawBatteryChart(_lastTimes, _lastUpVals, _lastDnVals);
   }
@@ -589,21 +604,42 @@ function processData(d) {
   // Atjaunināt slaideru diapazonu pēc datiem
   const allVals = [...upClean, ...dnClean];
   if (allVals.length) {
-    const maxVal = Math.ceil(Math.max(...allVals) / 50) * 50;
+    const dataMin = Math.floor(Math.min(...allVals) / 5) * 5;
+    const dataMax = Math.ceil(Math.max(...allVals)  / 5) * 5;
+    const step    = dataMax > 500 ? 10 : 5;
     ['up-limit', 'dn-limit'].forEach(id => {
-      document.getElementById(id).max = maxVal;
+      const el = document.getElementById(id);
+      el.min  = dataMin;
+      el.max  = dataMax;
+      el.step = step;
+      // Ierobežo pašreizējo vērtību diapazonā
+      el.value = Math.max(dataMin, Math.min(dataMax, parseFloat(el.value)));
     });
-    document.getElementById('up-limit-max').textContent = maxVal;
-    document.getElementById('dn-limit-max').textContent = maxVal;
+    document.getElementById('up-limit-min').textContent = dataMin;
+    document.getElementById('up-limit-max').textContent = dataMax;
+    document.getElementById('dn-limit-min').textContent = dataMin;
+    document.getElementById('dn-limit-max').textContent = dataMax;
+    // Atjaunināt JS mainigos un etiķetes
+    upwardLimit   = parseFloat(document.getElementById('up-limit').value);
+    downwardLimit = parseFloat(document.getElementById('dn-limit').value);
+    document.getElementById('up-limit-val').innerHTML =
+      `${upwardLimit} <span style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span>`;
+    document.getElementById('dn-limit-val').innerHTML =
+      `${downwardLimit} <span style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span>`;
   }
 
   // Galvenais grafiks (decimēts — max 400 punkti)
   const step   = Math.max(1, Math.ceil(times.length / 400));
-  const tDecim = times.filter((_, i) => i % step === 0);
+  const tDecim = times.filter((_, i)  => i % step === 0);
   const uDecim = upVals.filter((_, i) => i % step === 0);
   const dDecim = dnVals.filter((_, i) => i % step === 0);
 
-  drawMain(tDecim, uDecim, dDecim);
+  // Akumulātora stāvoklis — decimēts
+  const { isDischarging, isCharging } = computeBattery(times, upVals, dnVals);
+  const isDDec = isDischarging.filter((_, i) => i % step === 0);
+  const isCDec = isCharging.filter((_, i)    => i % step === 0);
+
+  drawMain(tDecim, uDecim, dDecim, isDDec, isCDec);
 
   // Izlādes periodi grafiks
   drawDischargeChart(times, upVals, dnVals);
@@ -619,8 +655,12 @@ function processData(d) {
 }
 
 // ── Galvenais grafiks ─────────────────────────────────────────────────────────
-function drawMain(labels, upData, dnData) {
+function drawMain(labels, upData, dnData, isDischarging, isCharging) {
   if (mainChartInst) { mainChartInst.destroy(); mainChartInst = null; }
+
+  // Rāda tikai aktīvos momentus — null citiem
+  const upActive = upData.map((v, i) => (isDischarging && isDischarging[i]) ? v : null);
+  const dnActive = dnData.map((v, i) => (isCharging    && isCharging[i])    ? v : null);
 
   const ctx = document.getElementById('mainChart').getContext('2d');
   mainChartInst = new Chart(ctx, {
@@ -629,26 +669,28 @@ function drawMain(labels, upData, dnData) {
       labels,
       datasets: [
         {
-          label: 'LV Upward',
-          data: upData,
+          label: 'Izlāde',
+          data: upActive,
           borderColor: '#22c55e',
-          backgroundColor: 'rgba(34,197,94,0.08)',
-          borderWidth: 1.5,
-          pointRadius: 0,
+          backgroundColor: 'rgba(34,197,94,0.15)',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: '#22c55e',
           fill: false,
-          tension: 0.2,
-          spanGaps: true,
+          tension: 0,
+          spanGaps: false,
         },
         {
-          label: 'LV Downward',
-          data: dnData,
-          borderColor: '#f97316',
-          backgroundColor: 'rgba(249,115,22,0.08)',
-          borderWidth: 1.5,
-          pointRadius: 0,
+          label: 'Uzlāde',
+          data: dnActive,
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37,99,235,0.15)',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: '#2563eb',
           fill: false,
-          tension: 0.2,
-          spanGaps: true,
+          tension: 0,
+          spanGaps: false,
         },
         {
           label: 'Upward limit',
@@ -685,7 +727,8 @@ function drawMain(labels, upData, dnData) {
             title: items => items[0].label,
             label: item => {
               if (item.dataset.label === 'Upward limit' || item.dataset.label === 'Downward limit') return null;
-              return `${item.dataset.label}: ${item.raw !== null ? item.raw.toFixed(2) + ' EUR/MWh' : '—'}`;
+              if (item.raw === null) return null;
+              return `${item.dataset.label}: ${item.raw.toFixed(2)} EUR/MWh`;
             },
           },
         },
@@ -714,12 +757,14 @@ function drawMain(labels, upData, dnData) {
 function drawDischargeChart(times, upVals, dnVals) {
   if (dailyChartInst) { dailyChartInst.destroy(); dailyChartInst = null; }
 
-  const { isDischarging } = computeBattery(times, upVals, dnVals);
+  const { isDischarging, isCharging } = computeBattery(times, upVals, dnVals);
 
   const step   = Math.max(1, Math.ceil(times.length / 400));
   const labels = times.filter((_, i)         => i % step === 0);
   const upDec  = upVals.filter((_, i)        => i % step === 0);
+  const dnDec  = dnVals.filter((_, i)        => i % step === 0);
   const isDec  = isDischarging.filter((_, i) => i % step === 0);
+  const isChr  = isCharging.filter((_, i)    => i % step === 0);
 
   const canvasCtx = document.getElementById('dailyChart').getContext('2d');
   dailyChartInst = new Chart(canvasCtx, {
@@ -731,7 +776,7 @@ function drawDischargeChart(times, upVals, dnVals) {
           label: 'LV Upward',
           data: upDec,
           segment: {
-            borderColor: (ctx) => isDec[ctx.p1DataIndex] ? '#16a34a' : 'rgba(34,197,94,0.3)',
+            borderColor: (ctx) => isDec[ctx.p1DataIndex] ? '#16a34a' : 'rgba(34,197,94,0.25)',
           },
           backgroundColor: 'transparent',
           borderWidth: 2,
@@ -751,6 +796,30 @@ function drawDischargeChart(times, upVals, dnVals) {
           tension: 0,
           spanGaps: true,
         },
+        {
+          label: 'LV Downward',
+          data: dnDec,
+          segment: {
+            borderColor: (ctx) => isChr[ctx.p1DataIndex] ? '#2563eb' : 'rgba(249,115,22,0.25)',
+          },
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false,
+          tension: 0.1,
+          spanGaps: true,
+        },
+        {
+          label: 'Downward limit',
+          data: labels.map(() => downwardLimit),
+          borderColor: '#d97706',
+          borderDash: [6, 3],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+          spanGaps: true,
+        },
       ],
     },
     options: {
@@ -762,9 +831,16 @@ function drawDischargeChart(times, upVals, dnVals) {
         tooltip: {
           callbacks: {
             label: item => {
-              if (item.dataset.label === 'Upward limit') return null;
-              const d = isDec[item.dataIndex] ? ' ⚡ Izlādējas' : '';
-              return `LV Upward: ${item.raw !== null ? item.raw.toFixed(2) + ' EUR/MWh' : '—'}${d}`;
+              if (item.dataset.label === 'Upward limit' || item.dataset.label === 'Downward limit') return null;
+              if (item.dataset.label === 'LV Upward') {
+                const d = isDec[item.dataIndex] ? ' ⚡ Izlādējas' : '';
+                return `LV Upward: ${item.raw !== null ? item.raw.toFixed(2) + ' EUR/MWh' : '—'}${d}`;
+              }
+              if (item.dataset.label === 'LV Downward') {
+                const c = isChr[item.dataIndex] ? ' 🔋 Uzlādējas' : '';
+                return `LV Downward: ${item.raw !== null ? item.raw.toFixed(2) + ' EUR/MWh' : '—'}${c}`;
+              }
+              return null;
             },
           },
         },
@@ -786,74 +862,86 @@ function drawDischargeChart(times, upVals, dnVals) {
 
 // ── Akumulātora simulācija ───────────────────────────────────────────────────
 function computeBattery(times, upVals, dnVals) {
-  const minSoC           = 0.20;  // neizlādēt zem 20%
-  const maxSoC           = 0.80;  // neuzlādēt virs 80%
-  const dischargePerSlot = 0.30;  // 25% noderīgā + 5% zudumi = 30% SoC per 15 min
-  const chargePerSlot    = 0.25;  // +25% SoC per 15 min (uzlāde)
+  const minSoC           = 0.20;
+  const maxSoC           = 0.80;
+  const dischargePerSlot = 0.30;  // 25% + 5% losses
+  const chargePerSlot    = 0.20;  // 25% - 5% losses
 
-  let soc          = 0.50;  // sāk ar 50%
-  let dischargeLeft = 0;    // atlikšie pēcā iesāktās izlādes sloti
+  let soc           = 0.50;
+  let dischargeLeft = 0;
+  let chargeLeft    = 0;
 
-  const socPct        = [];
-  const socKwh        = [];
-  const isDischarging = [];
+  const socPct = [], socKwh = [], isDischarging = [], isCharging = [];
 
   for (let i = 0; i < times.length; i++) {
     const up = upVals[i];
     const dn = dnVals[i];
 
     if (dischargeLeft > 0) {
-      // Turpina iepriekš iesākto izlādi
       soc = Math.max(minSoC, soc - dischargePerSlot);
       dischargeLeft--;
-      isDischarging.push(true);
+      isDischarging.push(true); isCharging.push(false);
+
+    } else if (chargeLeft > 0) {
+      soc = Math.min(maxSoC, soc + chargePerSlot);
+      chargeLeft--;
+      isDischarging.push(false); isCharging.push(true);
 
     } else if (up !== null && up > upwardLimit) {
-      // Cena virs limita — vērtē vai var sākt izlādi
       const affordable = Math.floor((soc - minSoC) / dischargePerSlot);
       if (affordable >= 1) {
-        // Skaitā cik nākamos slotus cena ir virs limita (max 4 = 60 min)
         let lookAhead = 0;
         for (let j = i; j < Math.min(i + 4, times.length); j++) {
           if (upVals[j] !== null && upVals[j] > upwardLimit) lookAhead++;
           else break;
         }
         const nSlots = Math.min(lookAhead, affordable, 4);
-        dischargeLeft = nSlots - 1;  // šis slots jau skaitās
+        dischargeLeft = nSlots - 1;
         soc = Math.max(minSoC, soc - dischargePerSlot);
-        isDischarging.push(true);
+        isDischarging.push(true); isCharging.push(false);
       } else {
-        // Nepietiek kapacitātes 15 min izlādei — nestartē
-        isDischarging.push(false);
+        isDischarging.push(false); isCharging.push(false);
       }
 
-    } else if (dn !== null && dn < downwardLimit && soc + chargePerSlot <= maxSoC) {
-      // Cena zem limita — uzlādē
-      soc = Math.min(maxSoC, soc + chargePerSlot);
-      isDischarging.push(false);
+    } else if (dn !== null && dn < downwardLimit) {
+      const affordable = Math.floor((maxSoC - soc) / chargePerSlot);
+      if (affordable >= 1) {
+        let lookAhead = 0;
+        for (let j = i; j < Math.min(i + 4, times.length); j++) {
+          if (dnVals[j] !== null && dnVals[j] < downwardLimit) lookAhead++;
+          else break;
+        }
+        const nSlots = Math.min(lookAhead, affordable, 4);
+        chargeLeft = nSlots - 1;
+        soc = Math.min(maxSoC, soc + chargePerSlot);
+        isDischarging.push(false); isCharging.push(true);
+      } else {
+        isDischarging.push(false); isCharging.push(false);
+      }
 
     } else {
-      isDischarging.push(false);
+      isDischarging.push(false); isCharging.push(false);
     }
 
     socPct.push(+(soc * 100).toFixed(1));
     socKwh.push(+(soc * batteryCapacity).toFixed(2));
   }
 
-  return { socPct, socKwh, isDischarging };
+  return { socPct, socKwh, isDischarging, isCharging };
 }
 
 function drawBatteryChart(times, upVals, dnVals) {
   if (batteryChartInst) { batteryChartInst.destroy(); batteryChartInst = null; }
 
-  const { socPct, socKwh, isDischarging } = computeBattery(times, upVals, dnVals);
+  const { socPct, socKwh, isDischarging, isCharging } = computeBattery(times, upVals, dnVals);
 
   // Decimēt līdz 400 punktiem
   const step   = Math.max(1, Math.ceil(times.length / 400));
-  const labels = times.filter((_, i)        => i % step === 0);
-  const pctD   = socPct.filter((_, i)       => i % step === 0);
-  const kwhD   = socKwh.filter((_, i)       => i % step === 0);
+  const labels = times.filter((_, i)         => i % step === 0);
+  const pctD   = socPct.filter((_, i)        => i % step === 0);
+  const kwhD   = socKwh.filter((_, i)        => i % step === 0);
   const isDec  = isDischarging.filter((_, i) => i % step === 0);
+  const isChr  = isCharging.filter((_, i)    => i % step === 0);
 
   const ctx = document.getElementById('batteryChart').getContext('2d');
   batteryChartInst = new Chart(ctx, {
@@ -865,7 +953,9 @@ function drawBatteryChart(times, upVals, dnVals) {
           label: 'SoC %',
           data: pctD,
           segment: {
-            borderColor: (ctx) => isDec[ctx.p1DataIndex] ? '#22c55e' : '#7c3aed',
+            borderColor: (ctx) => isDec[ctx.p1DataIndex] ? '#16a34a'
+                                : isChr[ctx.p1DataIndex] ? '#2563eb'
+                                : '#7c3aed',
           },
           backgroundColor: 'rgba(124,58,237,0.06)',
           borderWidth: 2,
@@ -879,7 +969,9 @@ function drawBatteryChart(times, upVals, dnVals) {
           label: 'Enerģija kWh',
           data: kwhD,
           segment: {
-            borderColor: (ctx) => isDec[ctx.p1DataIndex] ? 'rgba(34,197,94,0.7)' : '#a78bfa',
+            borderColor: (ctx) => isDec[ctx.p1DataIndex] ? 'rgba(34,197,94,0.7)'
+                                : isChr[ctx.p1DataIndex] ? 'rgba(37,99,235,0.6)'
+                                : '#a78bfa',
           },
           backgroundColor: 'transparent',
           borderWidth: 1.5,
