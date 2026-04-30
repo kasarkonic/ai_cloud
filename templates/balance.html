@@ -1144,9 +1144,6 @@
 
       document.getElementById('sim-discharge').textContent = sumDischarge.toFixed(2) + ' EUR';
       document.getElementById('sim-charge').textContent = sumCharge.toFixed(2) + ' EUR';
-      document.getElementById('sim-loses').textContent = loses + ' %';
-      document.getElementById('sim-delivery').textContent = loses + ' %';
-
 
       const total = sumDischarge + sumCharge;
       const simTotalEl = document.getElementById('sim-total');
@@ -1178,12 +1175,14 @@
 
     // ── Statistikas attēlošana ────────────────────────────────────────────────────
     function setStats(upAvg, upMin, upMax, dnAvg, dnMin, dnMax) {
-      document.getElementById('up-avg').textContent = upAvg;
-      document.getElementById('up-min').textContent = upMin;
-      document.getElementById('up-max').textContent = upMax;
-      document.getElementById('dn-avg').textContent = dnAvg;
-      document.getElementById('dn-min').textContent = dnMin;
-      document.getElementById('dn-max').textContent = dnMax;
+      //  document.getElementById('up-avg').textContent = upAvg;
+      //  document.getElementById('up-min').textContent = upMin;
+      //  document.getElementById('up-max').textContent = upMax;
+      //  document.getElementById('dn-avg').textContent = dnAvg;
+      //  document.getElementById('dn-min').textContent = dnMin;
+      //  document.getElementById('dn-max').textContent = dnMax;
+      document.getElementById('sim-loses').textContent = loses + ' %';
+      document.getElementById('sim-delivery').textContent = loses + ' %';
     }
 
     // ── Sākt ──────────────────────────────────────────────────────────────────────
