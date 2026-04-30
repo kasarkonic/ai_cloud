@@ -287,11 +287,11 @@
   <div class="legend">
     <div class="legend-item">
       <div class="legend-dot" style="background:#22c55e"></div>
-      Izlāde (Upward)
+      LV Upward
     </div>
     <div class="legend-item">
-      <div class="legend-dot" style="background:#2563eb"></div>
-      Uzlāde (Downward)
+      <div class="legend-dot" style="background:#f97316"></div>
+      LV Downward
     </div>
     <div class="legend-item">
       <div style="width:18px;border-top:2px dashed #16a34a;"></div>
@@ -312,28 +312,12 @@
   </div>
   <div class="legend">
     <div class="legend-item">
-      <div class="legend-dot" style="background:#16a34a"></div>
-      Akumulātors izlādējas
-    </div>
-    <div class="legend-item">
-      <div class="legend-dot" style="background:rgba(34,197,94,0.25)"></div>
-      Upward virs limita (nav kapacitātes)
-    </div>
-    <div class="legend-item">
-      <div style="width:18px;border-top:2px dashed #16a34a;"></div>
-      Upward limit
+      <div class="legend-dot" style="background:#22c55e"></div>
+      Izlāde
     </div>
     <div class="legend-item">
       <div class="legend-dot" style="background:#2563eb"></div>
-      Akumulātors uzlādējas
-    </div>
-    <div class="legend-item">
-      <div class="legend-dot" style="background:rgba(249,115,22,0.25)"></div>
-      Downward zem limita (nav kapacitātes)
-    </div>
-    <div class="legend-item">
-      <div style="width:18px;border-top:2px dashed #d97706;"></div>
-      Downward limit
+      Uzlāde
     </div>
   </div>
 </div>
@@ -426,10 +410,7 @@ function onLimitChange() {
     const tDecim = _lastTimes.filter((_, i)  => i % step === 0);
     const uDecim = _lastUpVals.filter((_, i) => i % step === 0);
     const dDecim = _lastDnVals.filter((_, i) => i % step === 0);
-    const { isDischarging, isCharging } = computeBattery(_lastTimes, _lastUpVals, _lastDnVals);
-    const isDDec = isDischarging.filter((_, i) => i % step === 0);
-    const isCDec = isCharging.filter((_, i)    => i % step === 0);
-    drawMain(tDecim, uDecim, dDecim, isDDec, isCDec);
+    drawMain(tDecim, uDecim, dDecim);
     drawDischargeChart(_lastTimes, _lastUpVals, _lastDnVals);
     drawBatteryChart(_lastTimes, _lastUpVals, _lastDnVals);
   }
@@ -634,12 +615,7 @@ function processData(d) {
   const uDecim = upVals.filter((_, i) => i % step === 0);
   const dDecim = dnVals.filter((_, i) => i % step === 0);
 
-  // Akumulātora stāvoklis — decimēts
-  const { isDischarging, isCharging } = computeBattery(times, upVals, dnVals);
-  const isDDec = isDischarging.filter((_, i) => i % step === 0);
-  const isCDec = isCharging.filter((_, i)    => i % step === 0);
-
-  drawMain(tDecim, uDecim, dDecim, isDDec, isCDec);
+  drawMain(tDecim, uDecim, dDecim);
 
   // Izlādes periodi grafiks
   drawDischargeChart(times, upVals, dnVals);
@@ -655,12 +631,8 @@ function processData(d) {
 }
 
 // ── Galvenais grafiks ─────────────────────────────────────────────────────────
-function drawMain(labels, upData, dnData, isDischarging, isCharging) {
+function drawMain(labels, upData, dnData) {
   if (mainChartInst) { mainChartInst.destroy(); mainChartInst = null; }
-
-  // Rāda tikai aktīvos momentus — null citiem
-  const upActive = upData.map((v, i) => (isDischarging && isDischarging[i]) ? v : null);
-  const dnActive = dnData.map((v, i) => (isCharging    && isCharging[i])    ? v : null);
 
   const ctx = document.getElementById('mainChart').getContext('2d');
   mainChartInst = new Chart(ctx, {
@@ -669,28 +641,26 @@ function drawMain(labels, upData, dnData, isDischarging, isCharging) {
       labels,
       datasets: [
         {
-          label: 'Izlāde',
-          data: upActive,
+          label: 'LV Upward',
+          data: upData,
           borderColor: '#22c55e',
-          backgroundColor: 'rgba(34,197,94,0.15)',
-          borderWidth: 2,
-          pointRadius: 3,
-          pointBackgroundColor: '#22c55e',
+          backgroundColor: 'rgba(34,197,94,0.08)',
+          borderWidth: 1.5,
+          pointRadius: 0,
           fill: false,
-          tension: 0,
-          spanGaps: false,
+          tension: 0.2,
+          spanGaps: true,
         },
         {
-          label: 'Uzlāde',
-          data: dnActive,
-          borderColor: '#2563eb',
-          backgroundColor: 'rgba(37,99,235,0.15)',
-          borderWidth: 2,
-          pointRadius: 3,
-          pointBackgroundColor: '#2563eb',
+          label: 'LV Downward',
+          data: dnData,
+          borderColor: '#f97316',
+          backgroundColor: 'rgba(249,115,22,0.08)',
+          borderWidth: 1.5,
+          pointRadius: 0,
           fill: false,
-          tension: 0,
-          spanGaps: false,
+          tension: 0.2,
+          spanGaps: true,
         },
         {
           label: 'Upward limit',
@@ -727,8 +697,7 @@ function drawMain(labels, upData, dnData, isDischarging, isCharging) {
             title: items => items[0].label,
             label: item => {
               if (item.dataset.label === 'Upward limit' || item.dataset.label === 'Downward limit') return null;
-              if (item.raw === null) return null;
-              return `${item.dataset.label}: ${item.raw.toFixed(2)} EUR/MWh`;
+              return `${item.dataset.label}: ${item.raw !== null ? item.raw.toFixed(2) + ' EUR/MWh' : '—'}`;
             },
           },
         },
@@ -761,64 +730,26 @@ function drawDischargeChart(times, upVals, dnVals) {
 
   const step   = Math.max(1, Math.ceil(times.length / 400));
   const labels = times.filter((_, i)         => i % step === 0);
-  const upDec  = upVals.filter((_, i)        => i % step === 0);
-  const dnDec  = dnVals.filter((_, i)        => i % step === 0);
   const isDec  = isDischarging.filter((_, i) => i % step === 0);
   const isChr  = isCharging.filter((_, i)    => i % step === 0);
 
+  // +1 = izlāde, -1 = uzlāde, null = dīkstāve
+  const barData  = isDec.map((d, i) => d ? 1 : isChr[i] ? -1 : null);
+  const barColors = barData.map(v => v === 1 ? '#22c55e' : v === -1 ? '#2563eb' : 'transparent');
+
   const canvasCtx = document.getElementById('dailyChart').getContext('2d');
   dailyChartInst = new Chart(canvasCtx, {
-    type: 'line',
+    type: 'bar',
     data: {
       labels,
       datasets: [
         {
-          label: 'LV Upward',
-          data: upDec,
-          segment: {
-            borderColor: (ctx) => isDec[ctx.p1DataIndex] ? '#16a34a' : 'rgba(34,197,94,0.25)',
-          },
-          backgroundColor: 'transparent',
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: false,
-          tension: 0.1,
-          spanGaps: true,
-        },
-        {
-          label: 'Upward limit',
-          data: labels.map(() => upwardLimit),
-          borderColor: '#16a34a',
-          borderDash: [6, 3],
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: false,
-          tension: 0,
-          spanGaps: true,
-        },
-        {
-          label: 'LV Downward',
-          data: dnDec,
-          segment: {
-            borderColor: (ctx) => isChr[ctx.p1DataIndex] ? '#2563eb' : 'rgba(249,115,22,0.25)',
-          },
-          backgroundColor: 'transparent',
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: false,
-          tension: 0.1,
-          spanGaps: true,
-        },
-        {
-          label: 'Downward limit',
-          data: labels.map(() => downwardLimit),
-          borderColor: '#d97706',
-          borderDash: [6, 3],
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: false,
-          tension: 0,
-          spanGaps: true,
+          label: 'Cikls',
+          data: barData,
+          backgroundColor: barColors,
+          borderColor: barColors,
+          borderWidth: 0,
+          borderRadius: 2,
         },
       ],
     },
@@ -830,17 +761,10 @@ function drawDischargeChart(times, upVals, dnVals) {
         legend: { display: false },
         tooltip: {
           callbacks: {
+            title: items => items[0].label,
             label: item => {
-              if (item.dataset.label === 'Upward limit' || item.dataset.label === 'Downward limit') return null;
-              if (item.dataset.label === 'LV Upward') {
-                const d = isDec[item.dataIndex] ? ' ⚡ Izlādējas' : '';
-                return `LV Upward: ${item.raw !== null ? item.raw.toFixed(2) + ' EUR/MWh' : '—'}${d}`;
-              }
-              if (item.dataset.label === 'LV Downward') {
-                const c = isChr[item.dataIndex] ? ' 🔋 Uzlādējas' : '';
-                return `LV Downward: ${item.raw !== null ? item.raw.toFixed(2) + ' EUR/MWh' : '—'}${c}`;
-              }
-              return null;
+              if (item.raw === null) return null;
+              return item.raw === 1 ? '⚡ Izlāde' : '🔋 Uzlāde';
             },
           },
         },
@@ -848,12 +772,17 @@ function drawDischargeChart(times, upVals, dnVals) {
       scales: {
         x: {
           ticks: { maxTicksLimit: 10, maxRotation: 0, font: { size: 10 }, color: '#94a3b8' },
-          grid: { color: '#f1f5f9' },
+          grid: { display: false },
         },
         y: {
-          ticks: { font: { size: 10 }, color: '#94a3b8' },
+          min: -1.5,
+          max: 1.5,
+          ticks: {
+            font: { size: 10 },
+            color: '#94a3b8',
+            callback: v => v === 1 ? 'Izlāde' : v === -1 ? 'Uzlāde' : '',
+          },
           grid: { color: '#f1f5f9' },
-          title: { display: true, text: 'EUR/MWh', font: { size: 11 }, color: '#94a3b8' },
         },
       },
     },
