@@ -579,8 +579,8 @@ function processData(d) {
     const dn = safeNum(row[dnIdxFinal]);
     if (t === null || t === undefined) continue;
     times.push(String(t));
-    upVals.push(up);
-    dnVals.push(dn);
+    upVals.push(up !== null ? Math.max(0, up) : null);
+    dnVals.push(dn !== null ? Math.max(0, dn) : null);
   }
 
   // Statistika
