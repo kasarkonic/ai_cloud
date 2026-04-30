@@ -1015,11 +1015,6 @@ function fillTable(times, upVals, dnVals) {
       <td style="text-align:right;color:${total >= 0 ? '#16a34a' : '#ef4444'};padding-top:6px">${total >= 0 ? '+' : ''}${total.toFixed(2)} EUR</td>
       <td></td>
     </tr>`;
-    <tr style="font-weight:700;border-top:1px solid #e2e8f0">
-      <td colspan="4" style="text-align:right;padding-top:6px">Kopā bilanče:</td>
-      <td style="text-align:right;color:${total >= 0 ? '#16a34a' : '#ef4444'};padding-top:6px">${total >= 0 ? '+' : ''}${total.toFixed(4)} EUR</td>
-      <td></td>
-    </tr>`;
 
   document.getElementById('row-count').textContent = `${n} cikli`;
 }
