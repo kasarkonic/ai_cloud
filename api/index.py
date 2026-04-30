@@ -262,7 +262,25 @@ def get_info():
     return render_template('info.html')
 
 
+def check_auth(username, password):
+    # Šeit norādi savu lietotājvārdu un paroli
+    return username == 'admins' and password == 'mana_parole_123'
+
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not check_auth(auth.username, auth.password):
+            return Response(
+                'Lūdzu, autorizējieties.', 401,
+                {'WWW-Authenticate': 'Basic realm="Login Required"'}
+            )
+        return f(*args, **kwargs)
+    return decorated
+
 @app.route('/balance', methods=['GET'])
+@requires_auth
 def get_balance():
     return render_template('balance.html')
 
