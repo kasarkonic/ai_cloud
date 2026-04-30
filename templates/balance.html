@@ -260,7 +260,48 @@
 
   <div class="error-bar" id="error-bar"></div>
 
-  <!-- Statistika — Upward -->
+  <!-- Simulācijas kopsavilkums -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">
+    <div style="background:#f0fdf4;border-radius:8px;padding:8px 10px;text-align:center;">
+      <div style="font-size:10px;color:#16a34a;font-weight:600;margin-bottom:2px;">Izlādes ienākumi</div>
+      <div id="sim-discharge" style="font-size:15px;font-weight:700;color:#16a34a;">—</div>
+    </div>
+    <div style="background:#eff6ff;border-radius:8px;padding:8px 10px;text-align:center;">
+      <div style="font-size:10px;color:#2563eb;font-weight:600;margin-bottom:2px;">Uzlādes izmaksas</div>
+      <div id="sim-charge" style="font-size:15px;font-weight:700;color:#2563eb;">—</div>
+    </div>
+    <div style="background:#fafafa;border-radius:8px;padding:8px 10px;text-align:center;border:1px solid #e2e8f0;">
+      <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:2px;">Kopā bilance</div>
+      <div id="sim-total" style="font-size:15px;font-weight:700;color:#64748b;">—</div>
+    </div>
+    <div style="background:#faf5ff;border-radius:8px;padding:8px 10px;text-align:center;">
+      <div style="font-size:10px;color:#7c3aed;font-weight:600;margin-bottom:2px;">Ciklu skaits</div>
+      <div id="sim-cycles" style="font-size:15px;font-weight:700;color:#7c3aed;">—</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">
+    <div style="background:#f0fdf4;border-radius:8px;padding:8px 10px;text-align:center;">
+      <div style="font-size:10px;color:#16a34a;font-weight:600;margin-bottom:2px;">Enerģijas zudumi 1 ciklā</div>
+      <div id="sim-loses" style="font-size:15px;font-weight:700;color:#16a34a;">—</div>
+    </div>
+    <div style="background:#eff6ff;border-radius:8px;padding:8px 10px;text-align:center;">
+      <div style="font-size:10px;color:#2563eb;font-weight:600;margin-bottom:2px;">Elektroenerģijas piegādes izmaksas
+      </div>
+      <div id="sim-delivery" style="font-size:15px;font-weight:700;color:#2563eb;">—</div>
+    </div>
+    <div style="background:#fafafa;border-radius:8px;padding:8px 10px;text-align:center;border:1px solid #e2e8f0;">
+      <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:2px;">Kopā bilance</div>
+      <div id="sim-total" style="font-size:15px;font-weight:700;color:#64748b;">—</div>
+    </div>
+    <div style="background:#faf5ff;border-radius:8px;padding:8px 10px;text-align:center;">
+      <div style="font-size:10px;color:#7c3aed;font-weight:600;margin-bottom:2px;">Ciklu skaits</div>
+      <div id="sim-cycles" style="font-size:15px;font-weight:700;color:#7c3aed;">—</div>
+    </div>
+  </div>
+
+
+  <!-- Statistika — Upward
   <div
     style="font-size:12px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
     ▲ Upward (augšupejošā regulēšana)
@@ -282,8 +323,8 @@
       <div class="stat-unit">EUR/MWh</div>
     </div>
   </div>
-
-  <!-- Statistika — Downward -->
+    -->
+  <!-- Statistika — Downward
   <div
     style="font-size:12px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
     ▼ Downward (lejupejošā regulēšana)
@@ -305,6 +346,8 @@
       <div class="stat-unit">EUR/MWh</div>
     </div>
   </div>
+    -->
+
 
   <!-- Limitu slaideri -->
   <div class="chart-card" style="padding:14px 16px;">
@@ -355,7 +398,7 @@
       <div class="chart-title" style="margin-bottom:0">LV aFRR cenas · 15 min periodi</div>
       <span id="period-label" style="font-size:12px;font-weight:600;color:#3b82f6">—</span>
     </div>
-    <!-- Simulācijas kopsavilkums -->
+    <!-- Simulācijas kopsavilkums
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">
       <div style="background:#f0fdf4;border-radius:8px;padding:8px 10px;text-align:center;">
         <div style="font-size:10px;color:#16a34a;font-weight:600;margin-bottom:2px;">Izlādes ienākumi</div>
@@ -374,6 +417,7 @@
         <div id="sim-cycles" style="font-size:15px;font-weight:700;color:#7c3aed;">—</div>
       </div>
     </div>
+     -->
     <div style="position:relative;height:260px">
       <canvas id="mainChart"></canvas>
     </div>
@@ -478,6 +522,7 @@
     let _lastTimes = [];
     let _lastUpVals = [];
     let _lastDnVals = [];
+    let loses = 5;
 
     // ── Kolonnas atrašana pēc nosaukuma ──────────────────────────────────────────
     function findCol(headers, patterns) {
@@ -895,8 +940,8 @@
     function computeBattery(times, upVals, dnVals) {
       const minSoC = 0.20;
       const maxSoC = 0.80;
-      const dischargePerSlot = 0.30;  // 25% + 5% losses
-      const chargePerSlot = 0.20;  // 25% - 5% losses
+      const dischargePerSlot = 0.25 + loses / 100;  // 25% + 5% losses
+      const chargePerSlot = 0.25 - loses / 100;  // 25% - 5% losses
 
       let soc = 0.50;
       let dischargeLeft = 0;
@@ -1099,6 +1144,10 @@
 
       document.getElementById('sim-discharge').textContent = sumDischarge.toFixed(2) + ' EUR';
       document.getElementById('sim-charge').textContent = sumCharge.toFixed(2) + ' EUR';
+      document.getElementById('sim-loses').textContent = loses + ' %';
+      document.getElementById('delivery').textContent = loses + ' %';
+
+
       const total = sumDischarge + sumCharge;
       const simTotalEl = document.getElementById('sim-total');
       simTotalEl.textContent = (total >= 0 ? '+' : '') + total.toFixed(2) + ' EUR';
