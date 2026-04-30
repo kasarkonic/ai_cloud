@@ -265,7 +265,7 @@ def get_info():
 
 def check_auth(username, password):
     # Šeit norādi savu lietotājvārdu un paroli
-    return username == 'admins' and password == 'mana_parole_123'
+    return username == '123' and password == '123'
 
 
 def requires_auth(f):
