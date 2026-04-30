@@ -710,12 +710,18 @@ function drawMain(labels, upData, dnData) {
   });
 }
 
-// ── Virs/zem limita grafiks ───────────────────────────────────────────────────
-function drawLimitsChart(labels, upData, dnData) {
+// ── Izlādes periodi grafiks ───────────────────────────────────────────────────
+function drawDischargeChart(times, upVals, dnVals) {
   if (dailyChartInst) { dailyChartInst.destroy(); dailyChartInst = null; }
 
-  const canvasCtx = document.getElementById('dailyChart').getContext('2d');
+  const { isDischarging } = computeBattery(times, upVals, dnVals);
 
+  const step   = Math.max(1, Math.ceil(times.length / 400));
+  const labels = times.filter((_, i)         => i % step === 0);
+  const upDec  = upVals.filter((_, i)        => i % step === 0);
+  const isDec  = isDischarging.filter((_, i) => i % step === 0);
+
+  const canvasCtx = document.getElementById('dailyChart').getContext('2d');
   dailyChartInst = new Chart(canvasCtx, {
     type: 'line',
     data: {
@@ -723,25 +729,12 @@ function drawLimitsChart(labels, upData, dnData) {
       datasets: [
         {
           label: 'LV Upward',
-          data: upData,
+          data: upDec,
           segment: {
-            borderColor: seg => (seg.p1.parsed.y > upwardLimit ? '#22c55e' : 'rgba(34,197,94,0.15)'),
+            borderColor: (ctx) => isDec[ctx.p1DataIndex] ? '#16a34a' : 'rgba(34,197,94,0.3)',
           },
           backgroundColor: 'transparent',
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: false,
-          tension: 0.1,
-          spanGaps: true,
-        },
-        {
-          label: 'LV Downward',
-          data: dnData,
-          segment: {
-            borderColor: seg => (seg.p1.parsed.y < downwardLimit ? '#f97316' : 'rgba(249,115,22,0.15)'),
-          },
-          backgroundColor: 'transparent',
-          borderWidth: 1.5,
+          borderWidth: 2,
           pointRadius: 0,
           fill: false,
           tension: 0.1,
@@ -751,17 +744,6 @@ function drawLimitsChart(labels, upData, dnData) {
           label: 'Upward limit',
           data: labels.map(() => upwardLimit),
           borderColor: '#16a34a',
-          borderDash: [6, 3],
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: false,
-          tension: 0,
-          spanGaps: true,
-        },
-        {
-          label: 'Downward limit',
-          data: labels.map(() => downwardLimit),
-          borderColor: '#d97706',
           borderDash: [6, 3],
           borderWidth: 1.5,
           pointRadius: 0,
@@ -780,8 +762,9 @@ function drawLimitsChart(labels, upData, dnData) {
         tooltip: {
           callbacks: {
             label: item => {
-              if (item.dataset.label === 'Upward limit' || item.dataset.label === 'Downward limit') return null;
-              return `${item.dataset.label}: ${item.raw !== null ? item.raw.toFixed(2) + ' EUR/MWh' : '—'}`;
+              if (item.dataset.label === 'Upward limit') return null;
+              const d = isDec[item.dataIndex] ? ' ⚡ Izlādējas' : '';
+              return `LV Upward: ${item.raw !== null ? item.raw.toFixed(2) + ' EUR/MWh' : '—'}${d}`;
             },
           },
         },
