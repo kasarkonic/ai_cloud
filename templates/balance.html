@@ -238,7 +238,7 @@
 <!-- Limitu slaideri -->
 <div class="chart-card" style="padding:14px 16px;">
   <div class="chart-title" style="margin-bottom:14px">Limitu iestatījumi</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:16px;">
     <div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <label style="font-size:12px;font-weight:600;color:#16a34a;">▲ Upward limit</label>
@@ -260,6 +260,17 @@
       <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;">
         <span>0</span><span id="dn-limit-max">1000</span>
       </div>
+    </div>
+  </div>
+  <div style="border-top:1px solid var(--border);padding-top:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <label style="font-size:12px;font-weight:600;color:#7c3aed;">🔋 Akumulātora ietilpība</label>
+      <span id="bat-cap-val" style="font-size:14px;font-weight:700;color:#7c3aed;">10 <span style="font-size:10px;font-weight:400;color:var(--muted)">kWh</span></span>
+    </div>
+    <input type="range" id="bat-cap" min="1" max="200" step="1" value="10"
+           style="width:100%;accent-color:#7c3aed;" oninput="onBatteryChange()">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;">
+      <span>1 kWh</span><span>200 kWh</span>
     </div>
   </div>
 </div>
@@ -311,6 +322,27 @@
   </div>
 </div>
 
+<!-- Akumulātora enerģija grafiks -->
+<div class="chart-card">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+    <div class="chart-title" style="margin-bottom:0">Akumulātora enerģija · simulācija</div>
+    <span id="bat-note" style="font-size:11px;color:var(--muted);">Uzlāde ↓ limits · Izlāde ↑ limits</span>
+  </div>
+  <div style="position:relative;height:220px">
+    <canvas id="batteryChart"></canvas>
+  </div>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#7c3aed"></div>
+      SoC %
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#a78bfa"></div>
+      Enerģija kWh
+    </div>
+  </div>
+</div>
+
 <!-- Datu tabula -->
 <div class="chart-card">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -338,11 +370,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-let mainChartInst  = null;
-let dailyChartInst = null;
+let mainChartInst    = null;
+let dailyChartInst   = null;
+let batteryChartInst = null;
 let currentDays    = 15;
 let upwardLimit    = 200;
 let downwardLimit  = 100;
+let batteryCapacity = 10;
 let _lastTimes     = [];
 let _lastUpVals    = [];
 let _lastDnVals    = [];
@@ -378,7 +412,15 @@ function onLimitChange() {
     const dDecim = _lastDnVals.filter((_, i) => i % step === 0);
     drawMain(tDecim, uDecim, dDecim);
     drawLimitsChart(tDecim, uDecim, dDecim);
+    drawBatteryChart(_lastTimes, _lastUpVals, _lastDnVals);
   }
+}
+
+function onBatteryChange() {
+  batteryCapacity = parseFloat(document.getElementById('bat-cap').value);
+  document.getElementById('bat-cap-val').innerHTML =
+    `${batteryCapacity} <span style="font-size:10px;font-weight:400;color:var(--muted)">kWh</span>`;
+  if (_lastTimes.length) drawBatteryChart(_lastTimes, _lastUpVals, _lastDnVals);
 }
 
 async function loadDays(days) {
@@ -558,6 +600,9 @@ function processData(d) {
 
   // Virs/zem limita grafiks
   drawLimitsChart(tDecim, uDecim, dDecim);
+
+  // Akumulātora enerģija
+  drawBatteryChart(times, upVals, dnVals);
 
   // Tabula (pēdējie 200)
   fillTable(times, upVals, dnVals);
@@ -743,6 +788,112 @@ function drawLimitsChart(labels, upData, dnData) {
           ticks: { font: { size: 10 }, color: '#94a3b8' },
           grid: { color: '#f1f5f9' },
           title: { display: true, text: 'EUR/MWh', font: { size: 11 }, color: '#94a3b8' },
+        },
+      },
+    },
+  });
+}
+
+// ── Akumulātora simulācija ───────────────────────────────────────────────────
+function computeBattery(times, upVals, dnVals) {
+  // 0.5C jauda: pilnā uzlāde/izlāde 2h → ΔE per 15-min slot = capacity/8
+  const stepFrac = 1 / 8;   // daļa no kapacitātes vienā slotā
+  let soc = 0.5;             // sāk ar 50%
+  const socPct = [];
+  const socKwh = [];
+  for (let i = 0; i < times.length; i++) {
+    const up = upVals[i];
+    const dn = dnVals[i];
+    if (up !== null && up > upwardLimit) {
+      soc = Math.max(0, soc - stepFrac);   // izlāde (upward regulēšana)
+    } else if (dn !== null && dn < downwardLimit) {
+      soc = Math.min(1, soc + stepFrac);   // uzlāde (downward regulēšana)
+    }
+    socPct.push(+(soc * 100).toFixed(1));
+    socKwh.push(+(soc * batteryCapacity).toFixed(2));
+  }
+  return { socPct, socKwh };
+}
+
+function drawBatteryChart(times, upVals, dnVals) {
+  if (batteryChartInst) { batteryChartInst.destroy(); batteryChartInst = null; }
+
+  const { socPct, socKwh } = computeBattery(times, upVals, dnVals);
+
+  // Decimēt līdz 400 punktiem
+  const step   = Math.max(1, Math.ceil(times.length / 400));
+  const labels = times.filter((_, i)  => i % step === 0);
+  const pctD   = socPct.filter((_, i) => i % step === 0);
+  const kwhD   = socKwh.filter((_, i) => i % step === 0);
+
+  const ctx = document.getElementById('batteryChart').getContext('2d');
+  batteryChartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'SoC %',
+          data: pctD,
+          borderColor: '#7c3aed',
+          backgroundColor: 'rgba(124,58,237,0.08)',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.2,
+          spanGaps: true,
+          yAxisID: 'yPct',
+        },
+        {
+          label: 'Enerģija kWh',
+          data: kwhD,
+          borderColor: '#a78bfa',
+          backgroundColor: 'transparent',
+          borderWidth: 1.5,
+          borderDash: [4, 3],
+          pointRadius: 0,
+          fill: false,
+          tension: 0.2,
+          spanGaps: true,
+          yAxisID: 'yKwh',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: item => item.dataset.label === 'SoC %'
+              ? `SoC: ${item.raw !== null ? item.raw.toFixed(1) + ' %' : '—'}`
+              : `Enerģija: ${item.raw !== null ? item.raw.toFixed(2) + ' kWh' : '—'}`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { maxTicksLimit: 10, maxRotation: 0, font: { size: 10 }, color: '#94a3b8' },
+          grid: { color: '#f1f5f9' },
+        },
+        yPct: {
+          position: 'left',
+          min: 0, max: 100,
+          ticks: { font: { size: 10 }, color: '#7c3aed',
+                   callback: v => v + '%' },
+          grid: { color: '#f3f0ff' },
+          title: { display: true, text: 'SoC %', font: { size: 11 }, color: '#7c3aed' },
+        },
+        yKwh: {
+          position: 'right',
+          min: 0,
+          max: batteryCapacity,
+          ticks: { font: { size: 10 }, color: '#a78bfa',
+                   callback: v => v + ' kWh' },
+          grid: { drawOnChartArea: false },
+          title: { display: true, text: 'kWh', font: { size: 11 }, color: '#a78bfa' },
         },
       },
     },
