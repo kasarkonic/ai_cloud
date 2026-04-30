@@ -286,7 +286,8 @@
       <div id="sim-loses" style="font-size:15px;font-weight:700;color:#16a34a;">—</div>
     </div>
     <div style="background:#eff6ff;border-radius:8px;padding:8px 10px;text-align:center;">
-      <div style="font-size:10px;color:#2563eb;font-weight:600;margin-bottom:2px;">Elektroenerģijas piegādes izmaksas
+      <div style="font-size:10px;color:#2563eb;font-weight:600;margin-bottom:2px;">Elektroenerģijas piegādes
+        izmaksas/0.7c/
       </div>
       <div id="sim-delivery" style="font-size:15px;font-weight:700;color:#2563eb;">—</div>
     </div>
@@ -1182,7 +1183,7 @@
       //  document.getElementById('dn-min').textContent = dnMin;
       //  document.getElementById('dn-max').textContent = dnMax;
       document.getElementById('sim-loses').textContent = loses + ' %';
-      document.getElementById('sim-delivery').textContent = loses + ' %';
+      document.getElementById('sim-delivery').textContent = n * 0.007 + ' Eur';
     }
 
     // ── Sākt ──────────────────────────────────────────────────────────────────────
