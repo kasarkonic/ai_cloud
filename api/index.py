@@ -36,6 +36,12 @@ price_threshold = 60.0
 relay_on = False
 
 NORDPOOL_URL = "https://nordpool.didnt.work/nordpool-lv-excel.csv"
+AFRR_URL     = "https://api-baltic.transparency-dashboard.eu/api/v1/export"
+
+# ─── aFRR kešs ────────────────────────────────────────────────────────────────
+_cache_afrr      = None
+_cache_afrr_time = 0.0
+_CACHE_AFRR_TTL  = 3600  # 1 stunda
 
 # ─── Mērījumu saglabāšana ─────────────────────────────────────────────────────
 _measurements = []          # saraksts ar dict ierakstiem
@@ -254,6 +260,94 @@ def get_karlis1():
 @app.route('/info', methods=['GET'])
 def get_info():
     return render_template('info.html')
+
+
+@app.route('/balance', methods=['GET'])
+def get_balance():
+    return render_template('balance.html')
+
+
+@app.route('/api/afrr', methods=['GET'])
+def handle_afrr():
+    """Ielādē aFRR LMP datus no Baltic Transparency Dashboard par pēdējām N dienām."""
+    global _cache_afrr, _cache_afrr_time
+
+    days = 15
+    try:
+        days = int(request.args.get('days', 15))
+        days = max(1, min(30, days))
+    except ValueError:
+        pass
+
+    # Kešs atbilst tikai noklusējumam 15 dienām
+    if days == 15 and _cache_afrr is not None and (time.time() - _cache_afrr_time) < _CACHE_AFRR_TTL:
+        return jsonify(_cache_afrr)
+
+    try:
+        tz = timezone(timedelta(hours=2))
+        end_dt   = datetime.now(tz)
+        start_dt = end_dt - timedelta(days=days)
+
+        params = {
+            "id":               "local_marginal_price_afrr",
+            "start_date":       start_dt.strftime("%Y-%m-%dT%H:%M"),
+            "end_date":         end_dt.strftime("%Y-%m-%dT%H:%M"),
+            "output_time_zone": "EET",
+            "output_format":    "json",
+            "json_header_groups": "0",
+        }
+
+        resp = requests.get(AFRR_URL, params=params, timeout=30)
+        resp.raise_for_status()
+        raw = resp.json()
+
+        # Normalizē uz {headers: [...], rows: [[...]]}
+        result = _parse_afrr(raw)
+
+        if days == 15:
+            _cache_afrr      = result
+            _cache_afrr_time = time.time()
+
+        return jsonify(result)
+
+    except Exception as e:
+        print(f"aFRR fetch kļūda: {e}")
+        return jsonify({"error": str(e), "headers": [], "rows": []}), 500
+
+
+def _parse_afrr(raw):
+    """
+    Pārvērš Baltic API atbildi vienotā formātā:
+    { "headers": ["Time","EE Up","EE Down","LV Up","LV Down","LT Up","LT Down"],
+      "rows": [["2026-04-15 00:00", 120.5, 80.3, ...], ...] }
+    """
+    # Formāts 1: {"headers": [...], "data": [[...]]}
+    if isinstance(raw, dict) and "headers" in raw and "data" in raw:
+        return {"headers": raw["headers"], "rows": raw["data"]}
+
+    # Formāts 2: {"data": [{"time": ..., col: val, ...}]}
+    if isinstance(raw, dict) and "data" in raw and isinstance(raw["data"], list):
+        rows_raw = raw["data"]
+        if rows_raw and isinstance(rows_raw[0], dict):
+            headers = list(rows_raw[0].keys())
+            rows = [[r.get(h) for h in headers] for r in rows_raw]
+            return {"headers": headers, "rows": rows}
+        # data ir masīvs ar masīviem, galvenes citur
+        headers = raw.get("columns", raw.get("header", []))
+        return {"headers": headers, "rows": raw["data"]}
+
+    # Formāts 3: tieši masīvs ar dict
+    if isinstance(raw, list) and raw and isinstance(raw[0], dict):
+        headers = list(raw[0].keys())
+        rows = [[r.get(h) for h in headers] for r in raw]
+        return {"headers": headers, "rows": rows}
+
+    # Formāts 4: tieši masīvs ar masīviem (pirmais – galvenes)
+    if isinstance(raw, list) and raw and isinstance(raw[0], list):
+        return {"headers": raw[0], "rows": raw[1:]}
+
+    # Nezināms formāts – atgriežam kā ir
+    return {"headers": [], "rows": [], "raw": raw}
 
 
 @app.route('/api/client-info', methods=['GET'])
