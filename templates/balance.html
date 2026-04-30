@@ -387,18 +387,27 @@ async function loadData(days) {
 }
 
 function parseAfrrRaw(raw) {
-  if (raw && raw.headers && raw.data)
-    return { headers: raw.headers, rows: raw.data };
-  if (raw && raw.columns && raw.data)
-    return { headers: raw.columns, rows: raw.data };
-  if (Array.isArray(raw) && raw.length && typeof raw[0] === 'object' && !Array.isArray(raw[0])) {
-    const headers = Object.keys(raw[0]);
-    return { headers, rows: raw.map(r => headers.map(h => r[h])) };
+  // Baltic API formāts: { error, message, data: { columns: [...], rows: [[...]] } }
+  const container = (raw && raw.data && typeof raw.data === 'object' && !Array.isArray(raw.data))
+    ? raw.data
+    : raw;
+
+  if (container.columns && container.rows)
+    return { headers: container.columns, rows: container.rows };
+  if (container.columns && container.data)
+    return { headers: container.columns, rows: container.data };
+  if (container.headers && container.rows)
+    return { headers: container.headers, rows: container.rows };
+  if (container.headers && container.data)
+    return { headers: container.headers, rows: container.data };
+  if (Array.isArray(container) && container.length && typeof container[0] === 'object' && !Array.isArray(container[0])) {
+    const headers = Object.keys(container[0]);
+    return { headers, rows: container.map(r => headers.map(h => r[h])) };
   }
-  if (Array.isArray(raw) && raw.length && Array.isArray(raw[0]))
-    return { headers: raw[0], rows: raw.slice(1) };
-  // Nezināms formāts — parāda konsolē lai var labot
-  console.warn('[aFRR] Nezināms JSON formāts! Pilna atbilde:', JSON.stringify(raw).slice(0, 1000));
+  if (Array.isArray(container) && container.length && Array.isArray(container[0]))
+    return { headers: container[0], rows: container.slice(1) };
+
+  console.warn('[aFRR] Nezināms JSON formāts! container atslēgas:', Object.keys(container));
   return { headers: [], rows: [], raw };
 }
 
