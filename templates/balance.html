@@ -728,14 +728,16 @@ function drawDischargeChart(times, upVals, dnVals) {
 
   const { isDischarging, isCharging } = computeBattery(times, upVals, dnVals);
 
-  const step   = Math.max(1, Math.ceil(times.length / 400));
-  const labels = times.filter((_, i)         => i % step === 0);
-  const isDec  = isDischarging.filter((_, i) => i % step === 0);
-  const isChr  = isCharging.filter((_, i)    => i % step === 0);
+  // Nav decimācijas — katrs 15 min slots = viens stabiņš
+  const labels    = times;
+  const isDec     = isDischarging;
+  const isChr     = isCharging;
 
-  // +1 = izlāde, -1 = uzlāde, null = dīkstāve
-  const barData  = isDec.map((d, i) => d ? 1 : isChr[i] ? -1 : null);
-  const barColors = barData.map(v => v === 1 ? '#22c55e' : v === -1 ? '#2563eb' : 'transparent');
+  // Stabiņa augstums = cena / 4 (EUR par 15 min ciklu), null = dīkstāve
+  const barData   = isDec.map((d, i) => d ? (upVals[i]  !== null ? +(upVals[i]  / 4).toFixed(4) : null)
+                                          : isChr[i] ? (dnVals[i] !== null ? +(dnVals[i] / 4).toFixed(4) : null)
+                                          : null);
+  const barColors = isDec.map((d, i) => d ? '#22c55e' : isChr[i] ? '#2563eb' : 'transparent');
 
   const canvasCtx = document.getElementById('dailyChart').getContext('2d');
   dailyChartInst = new Chart(canvasCtx, {
@@ -764,7 +766,8 @@ function drawDischargeChart(times, upVals, dnVals) {
             title: items => items[0].label,
             label: item => {
               if (item.raw === null) return null;
-              return item.raw === 1 ? '⚡ Izlāde' : '🔋 Uzlāde';
+              const type = isDec[item.dataIndex] ? '⚡ Izlāde' : '🔋 Uzlāde';
+              return `${type}: ${item.raw.toFixed(2)} EUR`;
             },
           },
         },
@@ -775,14 +778,9 @@ function drawDischargeChart(times, upVals, dnVals) {
           grid: { display: false },
         },
         y: {
-          min: -1.5,
-          max: 1.5,
-          ticks: {
-            font: { size: 10 },
-            color: '#94a3b8',
-            callback: v => v === 1 ? 'Izlāde' : v === -1 ? 'Uzlāde' : '',
-          },
+          ticks: { font: { size: 10 }, color: '#94a3b8', callback: v => v + ' EUR' },
           grid: { color: '#f1f5f9' },
+          title: { display: true, text: 'EUR / 15 min', font: { size: 11 }, color: '#94a3b8' },
         },
       },
     },
@@ -864,13 +862,12 @@ function drawBatteryChart(times, upVals, dnVals) {
 
   const { socPct, socKwh, isDischarging, isCharging } = computeBattery(times, upVals, dnVals);
 
-  // Decimēt līdz 400 punktiem
-  const step   = Math.max(1, Math.ceil(times.length / 400));
-  const labels = times.filter((_, i)         => i % step === 0);
-  const pctD   = socPct.filter((_, i)        => i % step === 0);
-  const kwhD   = socKwh.filter((_, i)        => i % step === 0);
-  const isDec  = isDischarging.filter((_, i) => i % step === 0);
-  const isChr  = isCharging.filter((_, i)    => i % step === 0);
+  // Nav decimācijas — pilns datu masīvs precīzai krāsošanai
+  const labels = times;
+  const pctD   = socPct;
+  const kwhD   = socKwh;
+  const isDec  = isDischarging;
+  const isChr  = isCharging;
 
   const ctx = document.getElementById('batteryChart').getContext('2d');
   batteryChartInst = new Chart(ctx, {
