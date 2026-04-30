@@ -277,9 +277,28 @@
 
 <!-- Grafiks (visi dati) -->
 <div class="chart-card">
-  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
     <div class="chart-title" style="margin-bottom:0">LV aFRR cenas · 15 min periodi</div>
     <span id="period-label" style="font-size:12px;font-weight:600;color:#3b82f6">—</span>
+  </div>
+  <!-- Simulācijas kopsavilkums -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">
+    <div style="background:#f0fdf4;border-radius:8px;padding:8px 10px;text-align:center;">
+      <div style="font-size:10px;color:#16a34a;font-weight:600;margin-bottom:2px;">Izlādes ienākumi</div>
+      <div id="sim-discharge" style="font-size:15px;font-weight:700;color:#16a34a;">—</div>
+    </div>
+    <div style="background:#eff6ff;border-radius:8px;padding:8px 10px;text-align:center;">
+      <div style="font-size:10px;color:#2563eb;font-weight:600;margin-bottom:2px;">Uzlādes izmaksas</div>
+      <div id="sim-charge" style="font-size:15px;font-weight:700;color:#2563eb;">—</div>
+    </div>
+    <div style="background:#fafafa;border-radius:8px;padding:8px 10px;text-align:center;border:1px solid #e2e8f0;">
+      <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:2px;">Kopā bilance</div>
+      <div id="sim-total" style="font-size:15px;font-weight:700;color:#64748b;">—</div>
+    </div>
+    <div style="background:#faf5ff;border-radius:8px;padding:8px 10px;text-align:center;">
+      <div style="font-size:10px;color:#7c3aed;font-weight:600;margin-bottom:2px;">Ciklu skaits</div>
+      <div id="sim-cycles" style="font-size:15px;font-weight:700;color:#7c3aed;">—</div>
+    </div>
   </div>
   <div style="position:relative;height:260px">
     <canvas id="mainChart"></canvas>
