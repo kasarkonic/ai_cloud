@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>aFRR Latvija · Balansēšanas tirgus</title>
+<style>
+  :root {
+    --bg: #f0f6ff;
+    --surface: #ffffff;
+    --border: #dde6f5;
+    --text: #1e293b;
+    --muted: #64748b;
+    --accent: #3b82f6;
+    --green: #16a34a;
+    --orange: #d97706;
+    --red: #dc2626;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #fef9c3 100%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 16px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; color: #1e3a5f; }
+  .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 12px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.07);
+  }
+  .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 20px; font-weight: 700; line-height: 1.1; }
+  .stat-unit  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.07);
+  }
+  .chart-title {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  canvas { width: 100% !important; }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 3px;
+  }
+
+  /* Dienu slēdzis */
+  .days-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .day-btn {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .day-btn.active {
+    background: linear-gradient(135deg, #3b82f6, #06b6d4);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 2px 6px rgba(59,130,246,0.3);
+  }
+
+  /* Tabula */
+  .table-wrap {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 260px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    margin-top: 12px;
+  }
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .data-table thead th {
+    background: #f1f5f9;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 8px 10px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .data-table tbody tr:nth-child(even) { background: #f8fafc; }
+  .data-table tbody td { padding: 6px 10px; white-space: nowrap; }
+  .data-table tbody tr:hover td { background: #e0f2fe; }
+  .td-up   { color: #16a34a; font-weight: 600; }
+  .td-down { color: #d97706; font-weight: 600; }
+
+  .status-bar {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 8px 0;
+  }
+  .error-bar {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--red);
+    margin-bottom: 16px;
+    display: none;
+  }
+  footer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>⚖️ aFRR · Latvija</h1>
+    <p class="sub">Balansēšanas tirgus · Local Marginal Price</p>
+  </div>
+  <div style="text-align:right">
+    <div style="font-size:11px;color:var(--muted)">Avots</div>
+    <div style="font-size:12px;font-weight:700;color:#3b82f6">Baltic TDB</div>
+  </div>
+</header>
+
+<div class="days-row">
+  <button class="day-btn" onclick="loadDays(3)">3 dienas</button>
+  <button class="day-btn" onclick="loadDays(7)">7 dienas</button>
+  <button class="day-btn active" id="btn-15" onclick="loadDays(15)">15 dienas</button>
+  <button class="day-btn" onclick="loadDays(30)">30 dienas</button>
+</div>
+
+<div class="error-bar" id="error-bar"></div>
+
+<!-- Statistika — Upward -->
+<div style="font-size:12px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
+  ▲ Upward (augšupejošā regulēšana)
+</div>
+<div class="stats" id="stats-up">
+  <div class="stat-card">
+    <div class="stat-label">Vid. Upward</div>
+    <div class="stat-value" id="up-avg" style="color:#16a34a">—</div>
+    <div class="stat-unit">EUR/MWh</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Min Upward</div>
+    <div class="stat-value" id="up-min" style="color:#16a34a">—</div>
+    <div class="stat-unit">EUR/MWh</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Maks Upward</div>
+    <div class="stat-value" id="up-max" style="color:#dc2626">—</div>
+    <div class="stat-unit">EUR/MWh</div>
+  </div>
+</div>
+
+<!-- Statistika — Downward -->
+<div style="font-size:12px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
+  ▼ Downward (lejupejošā regulēšana)
+</div>
+<div class="stats" id="stats-down">
+  <div class="stat-card">
+    <div class="stat-label">Vid. Downward</div>
+    <div class="stat-value" id="dn-avg" style="color:#d97706">—</div>
+    <div class="stat-unit">EUR/MWh</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Min Downward</div>
+    <div class="stat-value" id="dn-min" style="color:#16a34a">—</div>
+    <div class="stat-unit">EUR/MWh</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Maks Downward</div>
+    <div class="stat-value" id="dn-max" style="color:#dc2626">—</div>
+    <div class="stat-unit">EUR/MWh</div>
+  </div>
+</div>
+
+<!-- Grafiks (visi dati) -->
+<div class="chart-card">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+    <div class="chart-title" style="margin-bottom:0">LV aFRR cenas · 15 min periodi</div>
+    <span id="period-label" style="font-size:12px;font-weight:600;color:#3b82f6">—</span>
+  </div>
+  <div style="position:relative;height:260px">
+    <canvas id="mainChart"></canvas>
+  </div>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#22c55e"></div>
+      LV Upward
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#f97316"></div>
+      LV Downward
+    </div>
+  </div>
+</div>
+
+<!-- Dienas vidējo grafiks -->
+<div class="chart-card">
+  <div class="chart-title">Dienas vidējās cenas</div>
+  <div style="position:relative;height:200px">
+    <canvas id="dailyChart"></canvas>
+  </div>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#22c55e"></div>
+      LV Upward (dienas vid.)
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#f97316"></div>
+      LV Downward (dienas vid.)
+    </div>
+  </div>
+</div>
+
+<!-- Datu tabula -->
+<div class="chart-card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <div class="chart-title" style="margin-bottom:0">Detalizēti dati</div>
+    <span style="font-size:11px;color:var(--muted)" id="row-count">—</span>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Laiks (EET)</th>
+          <th>LV Upward</th>
+          <th>LV Downward</th>
+        </tr>
+      </thead>
+      <tbody id="data-tbody">
+        <tr><td colspan="3" style="text-align:center;padding:20px;color:var(--muted)">Ielādē...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="status-bar">Pēdējā atjaunošana: <span id="last-update">—</span></div>
+<footer>Avots: Baltic Transparency Dashboard · api-baltic.transparency-dashboard.eu</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+let mainChartInst  = null;
+let dailyChartInst = null;
+let currentDays    = 15;
+
+// ── Kolonnas atrašana pēc nosaukuma ──────────────────────────────────────────
+function findCol(headers, patterns) {
+  for (const p of patterns) {
+    const re = new RegExp(p, 'i');
+    const idx = headers.findIndex(h => re.test(String(h)));
+    if (idx !== -1) return idx;
+  }
+  return -1;
+}
+
+function safeNum(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = parseFloat(v);
+  return isNaN(n) ? null : n;
+}
+
+// ── Datu ielāde ───────────────────────────────────────────────────────────────
+async function loadDays(days) {
+  currentDays = days;
+  document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  await loadData(days);
+}
+
+async function loadData(days) {
+  document.getElementById('error-bar').style.display = 'none';
+  setStats('—', '—', '—', '—', '—', '—');
+
+  try {
+    const r = await fetch(`/api/afrr?days=${days}`);
+    const d = await r.json();
+
+    if (d.error) throw new Error(d.error);
+
+    processData(d);
+    document.getElementById('last-update').textContent = new Date().toLocaleTimeString('lv-LV');
+
+  } catch(e) {
+    const eb = document.getElementById('error-bar');
+    eb.textContent = 'Datu ielādes kļūda: ' + e.message;
+    eb.style.display = 'block';
+    document.getElementById('data-tbody').innerHTML =
+      '<tr><td colspan="3" style="text-align:center;padding:20px;color:#dc2626">Kļūda ielādējot datus</td></tr>';
+  }
+}
+
+function processData(d) {
+  const headers = d.headers || [];
+  const rows    = d.rows    || [];
+
+  // Laika kolonna — 0. vai pirmā ar "time/date/timestamp"
+  const tIdx = findCol(headers, ['time','date','timestamp','period']) !== -1
+    ? findCol(headers, ['time','date','timestamp','period'])
+    : 0;
+
+  // LV Upward: meklē "lv.*up" vai "up.*lv", vai vienkārši "up" bez citas valsts
+  const upIdx = findCol(headers, [
+    'lv.*(up|reg.*up|upward)',
+    '(up|upward).*lv',
+    'latvia.*up',
+    'up.*latvia'
+  ]);
+
+  // LV Downward
+  const dnIdx = findCol(headers, [
+    'lv.*(down|reg.*down|downward)',
+    '(down|downward).*lv',
+    'latvia.*down',
+    'down.*latvia'
+  ]);
+
+  // Ja nosaukumi nav atpazīti, izmanto aizstājējus:
+  // Parasti Baltic aFRR kolonnu secība: EE Up, EE Down, LV Up, LV Down, LT Up, LT Down
+  const upIdxFinal  = upIdx !== -1 ? upIdx  : (headers.length >= 4 ? 3 : 1);
+  const dnIdxFinal  = dnIdx !== -1 ? dnIdx  : (headers.length >= 5 ? 4 : 2);
+
+  // Iezīmēt, kuras kolonnas tiek izmantotas
+  const upLabel = headers[upIdxFinal] || `Kolonna ${upIdxFinal}`;
+  const dnLabel = headers[dnIdxFinal] || `Kolonna ${dnIdxFinal}`;
+
+  // Savākt datus
+  const times  = [];
+  const upVals = [];
+  const dnVals = [];
+
+  for (const row of rows) {
+    const t  = row[tIdx];
+    const up = safeNum(row[upIdxFinal]);
+    const dn = safeNum(row[dnIdxFinal]);
+    if (t === null || t === undefined) continue;
+    times.push(String(t));
+    upVals.push(up);
+    dnVals.push(dn);
+  }
+
+  // Statistika
+  const upClean = upVals.filter(v => v !== null);
+  const dnClean = dnVals.filter(v => v !== null);
+
+  if (upClean.length) {
+    const avg = v => (v.reduce((a,b) => a+b, 0) / v.length).toFixed(1);
+    const mn  = v => Math.min(...v).toFixed(1);
+    const mx  = v => Math.max(...v).toFixed(1);
+    setStats(avg(upClean), mn(upClean), mx(upClean),
+             avg(dnClean), mn(dnClean), mx(dnClean));
+  }
+
+  // Perioda uzraksts
+  if (times.length >= 2) {
+    document.getElementById('period-label').textContent =
+      `${times[0].slice(0,10)} – ${times[times.length-1].slice(0,10)}`;
+  }
+
+  // Galvenais grafiks (decimēts — max 400 punkti)
+  const step   = Math.max(1, Math.ceil(times.length / 400));
+  const tDecim = times.filter((_, i) => i % step === 0);
+  const uDecim = upVals.filter((_, i) => i % step === 0);
+  const dDecim = dnVals.filter((_, i) => i % step === 0);
+
+  drawMain(tDecim, uDecim, dDecim);
+
+  // Dienu vidējo grafiks
+  drawDaily(times, upVals, dnVals);
+
+  // Tabula (pēdējie 200)
+  fillTable(times, upVals, dnVals);
+
+  // Rindu skaits
+  document.getElementById('row-count').textContent = `${rows.length} ieraksti`;
+}
+
+// ── Galvenais grafiks ─────────────────────────────────────────────────────────
+function drawMain(labels, upData, dnData) {
+  if (mainChartInst) { mainChartInst.destroy(); mainChartInst = null; }
+
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  mainChartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'LV Upward',
+          data: upData,
+          borderColor: '#22c55e',
+          backgroundColor: 'rgba(34,197,94,0.08)',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0.2,
+          spanGaps: true,
+        },
+        {
+          label: 'LV Downward',
+          data: dnData,
+          borderColor: '#f97316',
+          backgroundColor: 'rgba(249,115,22,0.08)',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0.2,
+          spanGaps: true,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => items[0].label,
+            label: item => `${item.dataset.label}: ${item.raw !== null ? item.raw.toFixed(2) + ' EUR/MWh' : '—'}`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: {
+            maxTicksLimit: 10,
+            maxRotation: 0,
+            font: { size: 10 },
+            color: '#94a3b8',
+          },
+          grid: { color: '#f1f5f9' },
+        },
+        y: {
+          ticks: { font: { size: 10 }, color: '#94a3b8' },
+          grid: { color: '#f1f5f9' },
+          title: { display: true, text: 'EUR/MWh', font: { size: 11 }, color: '#94a3b8' },
+        },
+      },
+    },
+  });
+}
+
+// ── Dienas vidējo grafiks ─────────────────────────────────────────────────────
+function drawDaily(times, upVals, dnVals) {
+  // Grupēt pēc dienas
+  const dayUp = {};
+  const dayDn = {};
+
+  for (let i = 0; i < times.length; i++) {
+    const day = times[i].slice(0, 10);
+    if (!dayUp[day]) { dayUp[day] = []; dayDn[day] = []; }
+    if (upVals[i] !== null) dayUp[day].push(upVals[i]);
+    if (dnVals[i] !== null) dayDn[day].push(dnVals[i]);
+  }
+
+  const days   = Object.keys(dayUp).sort();
+  const avgUp  = days.map(d => dayUp[d].length  ? (dayUp[d].reduce((a,b)=>a+b,0)/dayUp[d].length)  : null);
+  const avgDn  = days.map(d => dayDn[d].length  ? (dayDn[d].reduce((a,b)=>a+b,0)/dayDn[d].length)  : null);
+  const labels = days.map(d => d.slice(5)); // MM-DD
+
+  if (dailyChartInst) { dailyChartInst.destroy(); dailyChartInst = null; }
+
+  const ctx = document.getElementById('dailyChart').getContext('2d');
+  dailyChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'LV Upward (vid.)',
+          data: avgUp,
+          backgroundColor: 'rgba(34,197,94,0.7)',
+          borderColor: '#16a34a',
+          borderWidth: 1,
+          borderRadius: 4,
+        },
+        {
+          label: 'LV Downward (vid.)',
+          data: avgDn,
+          backgroundColor: 'rgba(249,115,22,0.7)',
+          borderColor: '#ea580c',
+          borderWidth: 1,
+          borderRadius: 4,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: item => `${item.dataset.label}: ${item.raw !== null ? item.raw.toFixed(1) + ' EUR/MWh' : '—'}`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { font: { size: 10 }, color: '#94a3b8', maxRotation: 45 },
+          grid: { display: false },
+        },
+        y: {
+          ticks: { font: { size: 10 }, color: '#94a3b8' },
+          grid: { color: '#f1f5f9' },
+          title: { display: true, text: 'EUR/MWh', font: { size: 11 }, color: '#94a3b8' },
+        },
+      },
+    },
+  });
+}
+
+// ── Tabula ────────────────────────────────────────────────────────────────────
+function fillTable(times, upVals, dnVals) {
+  const tbody = document.getElementById('data-tbody');
+  const last  = Math.min(times.length, 200);
+  const start = times.length - last;
+  let html = '';
+
+  for (let i = times.length - 1; i >= start; i--) {
+    const up = upVals[i] !== null ? upVals[i].toFixed(2) : '—';
+    const dn = dnVals[i] !== null ? dnVals[i].toFixed(2) : '—';
+    html += `<tr>
+      <td>${times[i]}</td>
+      <td class="td-up">${up}</td>
+      <td class="td-down">${dn}</td>
+    </tr>`;
+  }
+
+  tbody.innerHTML = html || '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--muted)">Nav datu</td></tr>';
+}
+
+// ── Statistikas attēlošana ────────────────────────────────────────────────────
+function setStats(upAvg, upMin, upMax, dnAvg, dnMin, dnMax) {
+  document.getElementById('up-avg').textContent = upAvg;
+  document.getElementById('up-min').textContent = upMin;
+  document.getElementById('up-max').textContent = upMax;
+  document.getElementById('dn-avg').textContent = dnAvg;
+  document.getElementById('dn-min').textContent = dnMin;
+  document.getElementById('dn-max').textContent = dnMax;
+}
+
+// ── Sākt ──────────────────────────────────────────────────────────────────────
+loadData(15);
+</script>
+</body>
+</html>
