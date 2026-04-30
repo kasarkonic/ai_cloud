@@ -346,21 +346,24 @@
 <!-- Datu tabula -->
 <div class="chart-card">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-    <div class="chart-title" style="margin-bottom:0">Detalizēti dati</div>
+    <div class="chart-title" style="margin-bottom:0">Uzlādes un izlādes cikli</div>
     <span style="font-size:11px;color:var(--muted)" id="row-count">—</span>
   </div>
   <div class="table-wrap">
     <table class="data-table">
       <thead>
         <tr>
+          <th>#</th>
           <th>Laiks (EET)</th>
-          <th>LV Upward</th>
-          <th>LV Downward</th>
+          <th>Cikls</th>
+          <th>Cena EUR / 15 min</th>
+          <th>SoC pēc</th>
         </tr>
       </thead>
       <tbody id="data-tbody">
-        <tr><td colspan="3" style="text-align:center;padding:20px;color:var(--muted)">Ielādē...</td></tr>
+        <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Ielādē...</td></tr>
       </tbody>
+      <tfoot id="data-tfoot"></tfoot>
     </table>
   </div>
 </div>
@@ -449,7 +452,7 @@ async function loadData(days) {
   document.getElementById('error-bar').style.display = 'none';
   setStats('—', '—', '—', '—', '—', '—');
   document.getElementById('data-tbody').innerHTML =
-    '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--muted)">Ielādē...</td></tr>';
+'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Ielādē...</td></tr>';
 
   const url = buildAfrrUrl(days);
   console.log('[aFRR] Pieprasa URL:', url);
@@ -486,7 +489,7 @@ async function loadData(days) {
     eb.textContent = 'Datu ielādes kļūda: ' + e.message;
     eb.style.display = 'block';
     document.getElementById('data-tbody').innerHTML =
-      '<tr><td colspan="3" style="text-align:center;padding:20px;color:#dc2626">Kļūda ielādējot datus</td></tr>';
+      '<tr><td colspan="5" style="text-align:center;padding:20px;color:#dc2626">Kļūda ielādējot datus</td></tr>';
   }
 }
 
@@ -713,11 +716,13 @@ function drawMain(labels, upData, dnData) {
           grid: { color: '#f1f5f9' },
         },
         y: {
+          afterFit(scale) { scale.width = 62; },
           ticks: { font: { size: 10 }, color: '#94a3b8' },
           grid: { color: '#f1f5f9' },
           title: { display: true, text: 'EUR/MWh', font: { size: 11 }, color: '#94a3b8' },
         },
       },
+      layout: { padding: { right: 62 } },
     },
   });
 }
@@ -778,11 +783,13 @@ function drawDischargeChart(times, upVals, dnVals) {
           grid: { display: false },
         },
         y: {
+          afterFit(scale) { scale.width = 62; },
           ticks: { font: { size: 10 }, color: '#94a3b8', callback: v => v + ' EUR' },
           grid: { color: '#f1f5f9' },
           title: { display: true, text: 'EUR / 15 min', font: { size: 11 }, color: '#94a3b8' },
         },
       },
+      layout: { padding: { right: 62 } },
     },
   });
 }
@@ -932,6 +939,7 @@ function drawBatteryChart(times, upVals, dnVals) {
         yPct: {
           position: 'left',
           min: 0, max: 100,
+          afterFit(scale) { scale.width = 62; },
           ticks: { font: { size: 10 }, color: '#7c3aed',
                    callback: v => v + '%' },
           grid: { color: '#f3f0ff' },
@@ -941,6 +949,7 @@ function drawBatteryChart(times, upVals, dnVals) {
           position: 'right',
           min: 0,
           max: batteryCapacity,
+          afterFit(scale) { scale.width = 62; },
           ticks: { font: { size: 10 }, color: '#a78bfa',
                    callback: v => v + ' kWh' },
           grid: { drawOnChartArea: false },
@@ -954,21 +963,65 @@ function drawBatteryChart(times, upVals, dnVals) {
 // ── Tabula ────────────────────────────────────────────────────────────────────
 function fillTable(times, upVals, dnVals) {
   const tbody = document.getElementById('data-tbody');
-  const last  = Math.min(times.length, 200);
-  const start = times.length - last;
-  let html = '';
+  const tfoot = document.getElementById('data-tfoot');
 
-  for (let i = times.length - 1; i >= start; i--) {
-    const up = upVals[i] !== null ? upVals[i].toFixed(2) : '—';
-    const dn = dnVals[i] !== null ? dnVals[i].toFixed(2) : '—';
+  const { isDischarging, isCharging, socPct } = computeBattery(times, upVals, dnVals);
+
+  let html        = '';
+  let n           = 0;
+  let sumCharge   = 0;
+  let sumDischarge = 0;
+
+  for (let i = 0; i < times.length; i++) {
+    if (!isDischarging[i] && !isCharging[i]) continue;
+    n++;
+    const isD    = isDischarging[i];
+    const price  = isD ? upVals[i] : dnVals[i];
+    const eur    = price !== null ? price / 4 : null;
+    const soc    = socPct[i];
+    if (eur !== null) { isD ? sumDischarge += eur : sumCharge += eur; }
+
+    const typeLabel = isD
+      ? '<span style="color:#16a34a;font-weight:600">⚡ Izlāde</span>'
+      : '<span style="color:#2563eb;font-weight:600">🔋 Uzlāde</span>';
+    const eurStr   = eur   !== null ? eur.toFixed(2)   + ' EUR'     : '—';
+    const socStr   = soc   !== null ? soc.toFixed(1)   + ' %'       : '—';
+
     html += `<tr>
+      <td>${n}</td>
       <td>${times[i]}</td>
-      <td class="td-up">${up}</td>
-      <td class="td-down">${dn}</td>
+      <td>${typeLabel}</td>
+      <td style="text-align:right">${eurStr}</td>
+      <td style="text-align:right">${socStr}</td>
     </tr>`;
   }
 
-  tbody.innerHTML = html || '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--muted)">Nav datu</td></tr>';
+  tbody.innerHTML = html || `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Nav ciklu</td></tr>`;
+
+  const total = sumDischarge + sumCharge;
+  tfoot.innerHTML = `
+    <tr style="border-top:2px solid #e2e8f0;font-weight:600">
+      <td colspan="3" style="text-align:right;padding-top:6px">Kopā izlāde:</td>
+      <td style="text-align:right;color:#16a34a;padding-top:6px">${sumDischarge.toFixed(2)} EUR</td>
+      <td></td>
+    </tr>
+    <tr style="font-weight:600">
+      <td colspan="3" style="text-align:right">Kopā uzlāde:</td>
+      <td style="text-align:right;color:#2563eb">${sumCharge.toFixed(2)} EUR</td>
+      <td></td>
+    </tr>
+    <tr style="font-weight:700;border-top:1px solid #e2e8f0">
+      <td colspan="3" style="text-align:right;padding-top:6px">Kopā bilanče:</td>
+      <td style="text-align:right;color:${total >= 0 ? '#16a34a' : '#ef4444'};padding-top:6px">${total >= 0 ? '+' : ''}${total.toFixed(2)} EUR</td>
+      <td></td>
+    </tr>`;
+    <tr style="font-weight:700;border-top:1px solid #e2e8f0">
+      <td colspan="4" style="text-align:right;padding-top:6px">Kopā bilanče:</td>
+      <td style="text-align:right;color:${total >= 0 ? '#16a34a' : '#ef4444'};padding-top:6px">${total >= 0 ? '+' : ''}${total.toFixed(4)} EUR</td>
+      <td></td>
+    </tr>`;
+
+  document.getElementById('row-count').textContent = `${n} cikli`;
 }
 
 // ── Statistikas attēlošana ────────────────────────────────────────────────────
