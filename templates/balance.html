@@ -996,9 +996,16 @@ function fillTable(times, upVals, dnVals) {
     </tr>`;
   }
 
+  document.getElementById('sim-discharge').textContent = sumDischarge.toFixed(2) + ' EUR';
+  document.getElementById('sim-charge').textContent    = sumCharge.toFixed(2) + ' EUR';
+  const total = sumDischarge + sumCharge;
+  const simTotalEl = document.getElementById('sim-total');
+  simTotalEl.textContent = (total >= 0 ? '+' : '') + total.toFixed(2) + ' EUR';
+  simTotalEl.style.color = total >= 0 ? '#16a34a' : '#ef4444';
+  document.getElementById('sim-cycles').textContent = n + ' cikli';
+
   tbody.innerHTML = html || `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Nav ciklu</td></tr>`;
 
-  const total = sumDischarge + sumCharge;
   tfoot.innerHTML = `
     <tr style="border-top:2px solid #e2e8f0;font-weight:600">
       <td colspan="3" style="text-align:right;padding-top:6px">Kopā izlāde:</td>
