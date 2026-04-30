@@ -238,7 +238,18 @@
 <!-- Limitu slaideri -->
 <div class="chart-card" style="padding:14px 16px;">
   <div class="chart-title" style="margin-bottom:14px">Limitu iestatījumi</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:16px;">
+  <div style="border-bottom:1px solid var(--border);padding-bottom:14px;margin-bottom:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <label style="font-size:12px;font-weight:600;color:#7c3aed;">🔋 Akumulātora ietilpība</label>
+      <span id="bat-cap-val" style="font-size:14px;font-weight:700;color:#7c3aed;">1000 <span style="font-size:10px;font-weight:400;color:var(--muted)">kWh</span></span>
+    </div>
+    <input type="range" id="bat-cap" min="1" max="1500" step="5" value="1000"
+           style="width:100%;accent-color:#7c3aed;" oninput="onBatteryChange()">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;">
+      <span>1 kWh</span><span>1500 kWh</span>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
     <div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <label style="font-size:12px;font-weight:600;color:#16a34a;">▲ Upward limit</label>
@@ -260,17 +271,6 @@
       <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;">
         <span id="dn-limit-min">0</span><span id="dn-limit-max">1000</span>
       </div>
-    </div>
-  </div>
-  <div style="border-top:1px solid var(--border);padding-top:14px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <label style="font-size:12px;font-weight:600;color:#7c3aed;">🔋 Akumulātora ietilpība</label>
-      <span id="bat-cap-val" style="font-size:14px;font-weight:700;color:#7c3aed;">1000 <span style="font-size:10px;font-weight:400;color:var(--muted)">kWh</span></span>
-    </div>
-    <input type="range" id="bat-cap" min="1" max="1500" step="5" value="1000"
-           style="width:100%;accent-color:#7c3aed;" oninput="onBatteryChange()">
-    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;">
-      <span>1 kWh</span><span>1500 kWh</span>
     </div>
   </div>
 </div>
@@ -435,6 +435,7 @@ function onLimitChange() {
     drawMain(tDecim, uDecim, dDecim);
     drawDischargeChart(_lastTimes, _lastUpVals, _lastDnVals);
     drawBatteryChart(_lastTimes, _lastUpVals, _lastDnVals);
+    fillTable(_lastTimes, _lastUpVals, _lastDnVals);
   }
 }
 
@@ -445,6 +446,7 @@ function onBatteryChange() {
   if (_lastTimes.length) {
     drawDischargeChart(_lastTimes, _lastUpVals, _lastDnVals);
     drawBatteryChart(_lastTimes, _lastUpVals, _lastDnVals);
+    fillTable(_lastTimes, _lastUpVals, _lastDnVals);
   }
 }
 
