@@ -235,6 +235,35 @@
   </div>
 </div>
 
+<!-- Limitu slaideri -->
+<div class="chart-card" style="padding:14px 16px;">
+  <div class="chart-title" style="margin-bottom:14px">Limitu iestatījumi</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <label style="font-size:12px;font-weight:600;color:#16a34a;">▲ Upward limit</label>
+        <span id="up-limit-val" style="font-size:14px;font-weight:700;color:#16a34a;">200 <span style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span></span>
+      </div>
+      <input type="range" id="up-limit" min="0" max="1000" step="5" value="200"
+             style="width:100%;accent-color:#22c55e;" oninput="onLimitChange()">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;">
+        <span>0</span><span id="up-limit-max">1000</span>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <label style="font-size:12px;font-weight:600;color:#d97706;">▼ Downward limit</label>
+        <span id="dn-limit-val" style="font-size:14px;font-weight:700;color:#d97706;">100 <span style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span></span>
+      </div>
+      <input type="range" id="dn-limit" min="0" max="1000" step="5" value="100"
+             style="width:100%;accent-color:#f97316;" oninput="onLimitChange()">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;">
+        <span>0</span><span id="dn-limit-max">1000</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Grafiks (visi dati) -->
 <div class="chart-card">
   <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
@@ -253,23 +282,31 @@
       <div class="legend-dot" style="background:#f97316"></div>
       LV Downward
     </div>
+    <div class="legend-item">
+      <div style="width:18px;border-top:2px dashed #16a34a;"></div>
+      Upward limit
+    </div>
+    <div class="legend-item">
+      <div style="width:18px;border-top:2px dashed #d97706;"></div>
+      Downward limit
+    </div>
   </div>
 </div>
 
-<!-- Dienas vidējo grafiks -->
+<!-- Virs/zem limita grafiks -->
 <div class="chart-card">
-  <div class="chart-title">Dienas vidējās cenas</div>
-  <div style="position:relative;height:200px">
+  <div class="chart-title">Zonas virs / zem limita</div>
+  <div style="position:relative;height:220px">
     <canvas id="dailyChart"></canvas>
   </div>
   <div class="legend">
     <div class="legend-item">
       <div class="legend-dot" style="background:#22c55e"></div>
-      LV Upward (dienas vid.)
+      LV Upward &gt; Upward limit
     </div>
     <div class="legend-item">
       <div class="legend-dot" style="background:#f97316"></div>
-      LV Downward (dienas vid.)
+      LV Downward &lt; Downward limit
     </div>
   </div>
 </div>
@@ -304,6 +341,11 @@
 let mainChartInst  = null;
 let dailyChartInst = null;
 let currentDays    = 15;
+let upwardLimit    = 200;
+let downwardLimit  = 100;
+let _lastTimes     = [];
+let _lastUpVals    = [];
+let _lastDnVals    = [];
 
 // ── Kolonnas atrašana pēc nosaukuma ──────────────────────────────────────────
 function findCol(headers, patterns) {
@@ -322,6 +364,23 @@ function safeNum(v) {
 }
 
 // ── Datu ielāde ───────────────────────────────────────────────────────────────
+function onLimitChange() {
+  upwardLimit  = parseFloat(document.getElementById('up-limit').value);
+  downwardLimit = parseFloat(document.getElementById('dn-limit').value);
+  document.getElementById('up-limit-val').innerHTML =
+    `${upwardLimit} <span style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span>`;
+  document.getElementById('dn-limit-val').innerHTML =
+    `${downwardLimit} <span style="font-size:10px;font-weight:400;color:var(--muted)">EUR/MWh</span>`;
+  if (_lastTimes.length) {
+    const step   = Math.max(1, Math.ceil(_lastTimes.length / 400));
+    const tDecim = _lastTimes.filter((_, i)  => i % step === 0);
+    const uDecim = _lastUpVals.filter((_, i) => i % step === 0);
+    const dDecim = _lastDnVals.filter((_, i) => i % step === 0);
+    drawMain(tDecim, uDecim, dDecim);
+    drawLimitsChart(tDecim, uDecim, dDecim);
+  }
+}
+
 async function loadDays(days) {
   currentDays = days;
   document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
@@ -473,6 +532,22 @@ function processData(d) {
       `${times[0].slice(0,10)} – ${times[times.length-1].slice(0,10)}`;
   }
 
+  // Saglabāt globāli slaideru atjauninājumiem
+  _lastTimes  = times;
+  _lastUpVals = upVals;
+  _lastDnVals = dnVals;
+
+  // Atjaunināt slaideru diapazonu pēc datiem
+  const allVals = [...upClean, ...dnClean];
+  if (allVals.length) {
+    const maxVal = Math.ceil(Math.max(...allVals) / 50) * 50;
+    ['up-limit', 'dn-limit'].forEach(id => {
+      document.getElementById(id).max = maxVal;
+    });
+    document.getElementById('up-limit-max').textContent = maxVal;
+    document.getElementById('dn-limit-max').textContent = maxVal;
+  }
+
   // Galvenais grafiks (decimēts — max 400 punkti)
   const step   = Math.max(1, Math.ceil(times.length / 400));
   const tDecim = times.filter((_, i) => i % step === 0);
@@ -481,8 +556,8 @@ function processData(d) {
 
   drawMain(tDecim, uDecim, dDecim);
 
-  // Dienu vidējo grafiks
-  drawDaily(times, upVals, dnVals);
+  // Virs/zem limita grafiks
+  drawLimitsChart(tDecim, uDecim, dDecim);
 
   // Tabula (pēdējie 200)
   fillTable(times, upVals, dnVals);
@@ -523,6 +598,28 @@ function drawMain(labels, upData, dnData) {
           tension: 0.2,
           spanGaps: true,
         },
+        {
+          label: 'Upward limit',
+          data: labels.map(() => upwardLimit),
+          borderColor: '#16a34a',
+          borderDash: [6, 3],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+          spanGaps: true,
+        },
+        {
+          label: 'Downward limit',
+          data: labels.map(() => downwardLimit),
+          borderColor: '#d97706',
+          borderDash: [6, 3],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+          spanGaps: true,
+        },
       ],
     },
     options: {
@@ -534,7 +631,10 @@ function drawMain(labels, upData, dnData) {
         tooltip: {
           callbacks: {
             title: items => items[0].label,
-            label: item => `${item.dataset.label}: ${item.raw !== null ? item.raw.toFixed(2) + ' EUR/MWh' : '—'}`,
+            label: item => {
+              if (item.dataset.label === 'Upward limit' || item.dataset.label === 'Downward limit') return null;
+              return `${item.dataset.label}: ${item.raw !== null ? item.raw.toFixed(2) + ' EUR/MWh' : '—'}`;
+            },
           },
         },
       },
@@ -558,47 +658,64 @@ function drawMain(labels, upData, dnData) {
   });
 }
 
-// ── Dienas vidējo grafiks ─────────────────────────────────────────────────────
-function drawDaily(times, upVals, dnVals) {
-  // Grupēt pēc dienas
-  const dayUp = {};
-  const dayDn = {};
-
-  for (let i = 0; i < times.length; i++) {
-    const day = times[i].slice(0, 10);
-    if (!dayUp[day]) { dayUp[day] = []; dayDn[day] = []; }
-    if (upVals[i] !== null) dayUp[day].push(upVals[i]);
-    if (dnVals[i] !== null) dayDn[day].push(dnVals[i]);
-  }
-
-  const days   = Object.keys(dayUp).sort();
-  const avgUp  = days.map(d => dayUp[d].length  ? (dayUp[d].reduce((a,b)=>a+b,0)/dayUp[d].length)  : null);
-  const avgDn  = days.map(d => dayDn[d].length  ? (dayDn[d].reduce((a,b)=>a+b,0)/dayDn[d].length)  : null);
-  const labels = days.map(d => d.slice(5)); // MM-DD
-
+// ── Virs/zem limita grafiks ───────────────────────────────────────────────────
+function drawLimitsChart(labels, upData, dnData) {
   if (dailyChartInst) { dailyChartInst.destroy(); dailyChartInst = null; }
 
-  const ctx = document.getElementById('dailyChart').getContext('2d');
-  dailyChartInst = new Chart(ctx, {
-    type: 'bar',
+  const canvasCtx = document.getElementById('dailyChart').getContext('2d');
+
+  dailyChartInst = new Chart(canvasCtx, {
+    type: 'line',
     data: {
       labels,
       datasets: [
         {
-          label: 'LV Upward (vid.)',
-          data: avgUp,
-          backgroundColor: 'rgba(34,197,94,0.7)',
-          borderColor: '#16a34a',
-          borderWidth: 1,
-          borderRadius: 4,
+          label: 'LV Upward',
+          data: upData,
+          segment: {
+            borderColor: seg => (seg.p1.parsed.y > upwardLimit ? '#22c55e' : 'rgba(34,197,94,0.15)'),
+          },
+          backgroundColor: 'transparent',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0.1,
+          spanGaps: true,
         },
         {
-          label: 'LV Downward (vid.)',
-          data: avgDn,
-          backgroundColor: 'rgba(249,115,22,0.7)',
-          borderColor: '#ea580c',
-          borderWidth: 1,
-          borderRadius: 4,
+          label: 'LV Downward',
+          data: dnData,
+          segment: {
+            borderColor: seg => (seg.p1.parsed.y < downwardLimit ? '#f97316' : 'rgba(249,115,22,0.15)'),
+          },
+          backgroundColor: 'transparent',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0.1,
+          spanGaps: true,
+        },
+        {
+          label: 'Upward limit',
+          data: labels.map(() => upwardLimit),
+          borderColor: '#16a34a',
+          borderDash: [6, 3],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+          spanGaps: true,
+        },
+        {
+          label: 'Downward limit',
+          data: labels.map(() => downwardLimit),
+          borderColor: '#d97706',
+          borderDash: [6, 3],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+          spanGaps: true,
         },
       ],
     },
@@ -610,14 +727,17 @@ function drawDaily(times, upVals, dnVals) {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: item => `${item.dataset.label}: ${item.raw !== null ? item.raw.toFixed(1) + ' EUR/MWh' : '—'}`,
+            label: item => {
+              if (item.dataset.label === 'Upward limit' || item.dataset.label === 'Downward limit') return null;
+              return `${item.dataset.label}: ${item.raw !== null ? item.raw.toFixed(2) + ' EUR/MWh' : '—'}`;
+            },
           },
         },
       },
       scales: {
         x: {
-          ticks: { font: { size: 10 }, color: '#94a3b8', maxRotation: 45 },
-          grid: { display: false },
+          ticks: { maxTicksLimit: 10, maxRotation: 0, font: { size: 10 }, color: '#94a3b8' },
+          grid: { color: '#f1f5f9' },
         },
         y: {
           ticks: { font: { size: 10 }, color: '#94a3b8' },
