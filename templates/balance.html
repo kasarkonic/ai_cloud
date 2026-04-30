@@ -351,7 +351,12 @@ async function loadData(days) {
   console.log('[aFRR] Pieprasa URL:', url);
 
   try {
-    const r = await fetch(url);
+    const r = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0',
+      }
+    });
     console.log('[aFRR] Atbilde:', r.status, r.statusText);
     if (!r.ok) {
       const body = await r.text();
@@ -359,7 +364,7 @@ async function loadData(days) {
       throw new Error(`HTTP ${r.status} — ${body.slice(0, 120)}`);
     }
     const raw = await r.json();
-    console.log('[aFRR] JSON saņemts, atslēgas:', Object.keys(raw));
+    console.log('[aFRR] JSON saņemts, raw struktūra:', JSON.stringify(raw).slice(0, 400));
     const d = parseAfrrRaw(raw);
     console.log('[aFRR] Galvenes:', d.headers);
     console.log('[aFRR] Rindu skaits:', d.rows.length);
@@ -384,12 +389,16 @@ async function loadData(days) {
 function parseAfrrRaw(raw) {
   if (raw && raw.headers && raw.data)
     return { headers: raw.headers, rows: raw.data };
+  if (raw && raw.columns && raw.data)
+    return { headers: raw.columns, rows: raw.data };
   if (Array.isArray(raw) && raw.length && typeof raw[0] === 'object' && !Array.isArray(raw[0])) {
     const headers = Object.keys(raw[0]);
     return { headers, rows: raw.map(r => headers.map(h => r[h])) };
   }
   if (Array.isArray(raw) && raw.length && Array.isArray(raw[0]))
     return { headers: raw[0], rows: raw.slice(1) };
+  // Nezināms formāts — parāda konsolē lai var labot
+  console.warn('[aFRR] Nezināms JSON formāts! Pilna atbilde:', JSON.stringify(raw).slice(0, 1000));
   return { headers: [], rows: [], raw };
 }
 
