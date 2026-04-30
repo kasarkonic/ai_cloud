@@ -387,22 +387,20 @@ async function loadData(days) {
 }
 
 function parseAfrrRaw(raw) {
-  // Baltic API formāts: { error, message, data: { columns: [...], rows: [[...]] } }
+  // Baltic API formāts: { error, data: { columns: [...], timeseries: [[...]] } }
   const container = (raw && raw.data && typeof raw.data === 'object' && !Array.isArray(raw.data))
     ? raw.data
     : raw;
 
-  if (container.columns && container.rows)
-    return { headers: container.columns, rows: container.rows };
-  if (container.columns && container.data)
-    return { headers: container.columns, rows: container.data };
-  if (container.headers && container.rows)
-    return { headers: container.headers, rows: container.rows };
-  if (container.headers && container.data)
-    return { headers: container.headers, rows: container.data };
+  const headers = container.columns  || container.headers || null;
+  const rows    = container.timeseries || container.rows || container.data || null;
+
+  if (headers && rows && Array.isArray(rows))
+    return { headers, rows };
+
   if (Array.isArray(container) && container.length && typeof container[0] === 'object' && !Array.isArray(container[0])) {
-    const headers = Object.keys(container[0]);
-    return { headers, rows: container.map(r => headers.map(h => r[h])) };
+    const h = Object.keys(container[0]);
+    return { headers: h, rows: container.map(r => h.map(k => r[k])) };
   }
   if (Array.isArray(container) && container.length && Array.isArray(container[0]))
     return { headers: container[0], rows: container.slice(1) };
