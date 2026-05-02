@@ -81,7 +81,7 @@ async def post_message() -> None:
     # Because the Content-Length header may be provided for you,
     # and if it does this value will be set to the number of bytes in the file.
     # Errors may occur if you open the file in text mode.
-    """"
+    """
     files = [
         (
             "attachment",
@@ -96,7 +96,7 @@ async def post_message() -> None:
     async with AsyncClient(auth=("api", _apiKey)) as _client:
         req = await _client.messages.create(data=data, files=files, domain=_domain)
     print(req.json())
-    """"
+    """
    
 async def post():
 
@@ -338,6 +338,7 @@ def requires_auth(f):
 @app.route('/balance', methods=['GET'])
 @requires_auth
 def get_balance():
+    post()
     return render_template('balance.html')
 
 
