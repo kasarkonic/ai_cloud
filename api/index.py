@@ -6,8 +6,11 @@ import requests
 import urllib3
 import csv
 import io
+import sys
 import os
 import asyncio
+
+sys.path.append(os.path.join(os.path.dirname(__file__)))
 from mailgun.client import AsyncClient
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
