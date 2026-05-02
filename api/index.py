@@ -6,6 +6,9 @@ import requests
 import urllib3
 import csv
 import io
+import os
+import asyncio
+from mailgun.client import AsyncClient
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -48,6 +51,58 @@ _CACHE_AFRR_TTL  = 3600  # 1 stunda
 _measurements = []          # saraksts ar dict ierakstiem
 _MAX_MEASUREMENTS = 10000   # limits atmiņas patēriņam
 
+_apiKey = os.environ.get('MAILGUN_API_KEY')
+_domain = os.environ.get('domain')
+html = """<body style="margin: 0; padding: 0;">
+ <table border="1" cellpadding="0" cellspacing="0" width="100%">
+  <tr>
+   <td>
+    Hello! Mail from ai_cloud. 
+   </td>
+  </tr>
+ </table>
+</body>"""
+
+client: AsyncClient = AsyncClient(auth=("_apiKey", key))
+
+
+async def post_message() -> None:
+    # Messages
+    # POST /<domain>/messages
+    data = {
+        "from": "postmaster@" + _domain ,
+        "to": "maris.dirveiks@gmail.com",
+        "cc": "",
+        "subject": "Hello World",
+        "html": html,
+        "o:tag": "Python test",
+    }
+    # It is strongly recommended that you open files in binary mode.
+    # Because the Content-Length header may be provided for you,
+    # and if it does this value will be set to the number of bytes in the file.
+    # Errors may occur if you open the file in text mode.
+    """"
+    files = [
+        (
+            "attachment",
+            ("test1.txt", Path("mailgun/doc_tests/files/test1.txt").read_bytes()),
+        ),
+        (
+            "attachment",
+            ("test2.txt", Path("mailgun/doc_tests/files/test2.txt").read_bytes()),
+        ),
+    ]
+
+    async with AsyncClient(auth=("api", _apiKey)) as _client:
+        req = await _client.messages.create(data=data, files=files, domain=_domain)
+    print(req.json())
+    """"
+   
+async def post():
+
+    await asyncio.gather(
+        post_message(),
+    )
 
 def current_slot():
     """Atgriež pašreizējo 15 min slotu (0–95) pēc Latvijas laika (UTC+2)."""
