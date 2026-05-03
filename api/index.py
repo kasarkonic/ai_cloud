@@ -70,7 +70,7 @@ html = """<body style="margin: 0; padding: 0;">
  </table>
 </body>"""
 
-def send_email():
+def post_message():
     return requests.post(
         f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
         auth=("api", _apiKey),
@@ -360,7 +360,7 @@ def requires_auth(f):
 @app.route('/balance', methods=['GET'])
 @requires_auth
 def get_balance():
-    #post()
+    post()
     return render_template('balance.html')
 
 
