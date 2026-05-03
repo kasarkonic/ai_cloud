@@ -9,11 +9,9 @@
             "destination": "/api/index.py"
         }
     ],
-    "functions": [
-        {
-            "api/*.py": {
-                "runtime": "vercel-python@0.1.0"
-            }
+    "functions": {
+        "api/*.py": {
+            "runtime": "vercel-python@0.1.0"
         }
-    ]
+    }
 }
