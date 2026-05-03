@@ -1,5 +1,5 @@
 flask
 requests
-mailgun3
+mailgun2
 httpx
 
