@@ -70,6 +70,20 @@ html = """<body style="margin: 0; padding: 0;">
  </table>
 </body>"""
 
+def send_email():
+    return requests.post(
+        f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
+        auth=("api", _apiKey),
+        data={
+            "from": f"Mailgun <mailgun@{_domain}>",
+            "to": ["maris.dirveiks@gmail.com"],
+            "subject": "Hello World",
+            "html": html,
+        },
+        timeout=10
+    )
+
+"""
 client: AsyncClient = AsyncClient(auth=("_apiKey", key))
 
 
@@ -84,6 +98,7 @@ async def post_message() -> None:
         "html": html,
         "o:tag": "Python test",
     }
+    """
     # It is strongly recommended that you open files in binary mode.
     # Because the Content-Length header may be provided for you,
     # and if it does this value will be set to the number of bytes in the file.
@@ -107,9 +122,9 @@ async def post_message() -> None:
    
 async def post():
 
-    await asyncio.gather(
-        post_message(),
-    )
+   # await asyncio.gather(
+        post_message()
+   # ,)
 
 def current_slot():
     """Atgriež pašreizējo 15 min slotu (0–95) pēc Latvijas laika (UTC+2)."""
