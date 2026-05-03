@@ -360,7 +360,7 @@ def requires_auth(f):
 @app.route('/balance', methods=['GET'])
 @requires_auth
 def get_balance():
-    post()
+    #post()
     return render_template('balance.html')
 
 
