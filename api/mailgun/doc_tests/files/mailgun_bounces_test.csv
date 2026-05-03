@@ -1,0 +1,5 @@
+address,code,error,created_at
+foo@example.com,,,
+bar@example.org,,,
+new@example.net,,,
+address@example.com,,,

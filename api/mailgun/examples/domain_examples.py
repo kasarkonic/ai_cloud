@@ -1,0 +1,282 @@
+from __future__ import annotations
+
+import os
+import re
+import subprocess
+from pathlib import Path
+
+from mailgun.client import Client
+
+
+key: str = os.environ["APIKEY"]
+domain: str = os.environ["DOMAIN"]
+secret_key_filename: str = os.environ["SECRET_KEY_FILENAME"]
+secret_key_path: Path = Path(secret_key_filename)
+ALLOWED_FILENAME_RE = re.compile(r"^[a-zA-Z0-9._-]{1,255}$")
+
+client: Client = Client(auth=("api", key))
+
+
+def get_domains() -> None:
+    """
+    GET /domains
+    :return:
+    """
+    data = client.domainlist.get()
+    print(data.json())
+
+
+def add_domain() -> None:
+    """
+    POST /domains
+    :return:
+    """
+    # Post domain
+    data = {
+        "name": "python.test.com",
+    }
+    # Problem with smtp_password!!!!
+
+    request = client.domains.create(data=data)
+    print(request.json())
+    print(request.status_code)
+
+
+# Get domain
+
+
+def get_simple_domain() -> None:
+    """
+    GET /domains/<domain>
+    :return:
+    """
+    domain_name = "python.test.com"
+    request = client.domains.get(domain_name=domain_name)
+    print(request.json())
+
+
+def update_simple_domain() -> None:
+    """
+    PUT /domains/<domain>
+    :return:
+    """
+    domain_name = "python.test.com"
+    data = {"name": domain_name, "spam_action": "disabled"}
+    request = client.domains.put(data=data, domain=domain_name)
+    print(request.json())
+
+
+def verify_domain() -> None:
+    """
+    PUT /domains/<domain>/verify
+    :return:
+    """
+    domain_name = "python.test.com"
+    request = client.domains.put(domain=domain_name, verify=True)
+    print(request.json())
+
+
+def delete_domain() -> None:
+    """
+    DELETE /domains/<domain>
+    :return:
+    """
+    # Delete domain
+    request = client.domains.delete(domain="python.test.com")
+    print(request.text)
+    print(request.status_code)
+
+
+def get_connections() -> None:
+    """
+    GET /domains/<domain>/connection
+    :return:
+    """
+    request = client.domains_connection.get(domain=domain)
+    print(request.json())
+
+
+def put_connections() -> None:
+    """
+    PUT /domains/<domain>/connection
+    :return:
+    """
+    data = {"require_tls": "true", "skip_verification": "false"}
+    request = client.domains_connection.put(domain=domain, data=data)
+    print(request.json())
+
+
+def get_tracking() -> None:
+    """
+    GET /domains/<domain>/tracking
+    :return:
+    """
+    request = client.domains_tracking.get(domain=domain)
+    print(request.json())
+
+
+def put_open_tracking() -> None:
+    """
+    PUT /domains/<domain>/tracking/open
+    :return:
+    """
+    data = {"active": "yes", "skip_verification": "false"}
+    request = client.domains_tracking_open.put(domain=domain, data=data)
+    print(request.json())
+
+
+def put_click_tracking() -> None:
+    """
+    PUT /domains/<domain>/tracking/click
+    :return:
+    """
+    data = {
+        "active": "yes",
+    }
+    request = client.domains_tracking_click.put(domain=domain, data=data)
+    print(request.json())
+
+
+def put_unsub_tracking() -> None:
+    """
+    PUT /domains/<domain>/tracking/unsubscribe
+    :return:
+    """
+    # fmt: off
+    data = {
+        "active": "yes",
+        "html_footer": "\n<br>\n<p><a href=\"%unsubscribe_url%\">UnSuBsCrIbE</a></p>\n",
+        "text_footer": "\n\nTo unsubscribe here click: <%unsubscribe_url%>\n\n"
+    }
+    # fmt: on
+    request = client.domains_tracking_unsubscribe.put(domain=domain, data=data)
+    print(request.json())
+
+
+def put_dkim_authority() -> None:
+    """
+    PUT /domains/<domain>/dkim_authority
+    :return:
+    """
+    data = {"self": "true"}
+    request = client.domains_dkimauthority.put(domain=domain, data=data)
+    print(request.json())
+
+
+def put_dkim_selector() -> None:
+    """
+    PUT /domains/<domain>/dkim_selector
+    :return:
+    """
+    data = {"dkim_selector": "s"}
+    request = client.domains_dkimselector.put(domain="python.test.com", data=data)
+    print(request.json())
+
+
+def put_web_prefix() -> None:
+    """
+    PUT /domains/<domain>/web_prefix
+    :return:
+    """
+    data = {"web_prefix": "python"}
+    request = client.domains_webprefix.put(domain="python.test.com", data=data)
+    print(request.json())
+
+
+def get_sending_queues() -> None:
+    """
+    GET /domains/<domain>/sending_queues
+    :return:
+    """
+    request = client.domains_sendingqueues.get(domain="python.test.com")
+    print(request.json())
+    print(request.status_code)
+
+
+def get_dkim_keys() -> None:
+    """
+    GET /v1/dkim/keys
+    :return:
+    """
+    data = {
+        "page": "string",
+        "limit": "0",
+        "signing_domain": "python.test.com",
+        "selector": "smtp",
+    }
+
+    request = client.dkim_keys.get(data=data)
+    print(request.json())
+
+
+def post_dkim_keys() -> None:
+    """
+    POST /v1/dkim/keys
+    :return:
+    """
+
+    # Private key PEM file must be generated in PKCS1 format. You need 'openssl' on your machine
+    # example:
+    # openssl genrsa -traditional -out .server.key 2048
+    if not ALLOWED_FILENAME_RE.match(secret_key_filename):
+        raise ValueError(f"Invalid filename: {secret_key_filename!r}")
+    subprocess.run(
+        ["openssl", "genrsa", "-traditional", "-out", secret_key_filename, "--", "2048"], check=True
+    )
+
+    files = [
+        (
+            "pem",
+            ("server.key", secret_key_path.read_bytes()),
+        )
+    ]
+
+    data = {
+        "signing_domain": "python.test.com",
+        "selector": "smtp",
+        "bits": "2048",
+        "pem": files,
+    }
+
+    headers = {"Content-Type": "multipart/form-data"}
+
+    request = client.dkim_keys.create(data=data, headers=headers, files=files)
+    print(request.json())
+
+
+def delete_dkim_keys() -> None:
+    """
+    GET /v1/dkim/keys
+    :return:
+    """
+    query = {"signing_domain": "python.test.com", "selector": "smtp"}
+
+    request = client.dkim_keys.delete(filters=query)
+    print(request.json())
+
+
+if __name__ == "__main__":
+    add_domain()
+    get_domains()
+    get_simple_domain()
+    update_simple_domain()
+    verify_domain()
+    delete_domain()
+
+    get_connections()
+    put_connections()
+    get_tracking()
+    put_open_tracking()
+    put_click_tracking()
+    put_unsub_tracking()
+
+    put_dkim_authority()
+
+    put_dkim_selector()
+    put_web_prefix()
+
+    get_sending_queues()
+
+    post_dkim_keys()
+    get_dkim_keys()
+    delete_dkim_keys()
