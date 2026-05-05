@@ -79,6 +79,9 @@ def post_message():
     # Apvienojam tos vienā stringā
     faila_saturs = f"Sveiks, {vards}!\n{dati}"
     
+     # Pārvēršam stringu baitos (Mailgun prasa baitus)
+    faila_objekts = io.BytesIO(faila_saturs.encode('utf-8'))
+    
     return requests.post(
         f"https://api.mailgun.net/v3/{_domain}/messages",   #f
         auth=("api", _apiKey),
