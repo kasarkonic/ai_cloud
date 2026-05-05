@@ -71,6 +71,14 @@ html = """<body style="margin: 0; padding: 0;">
 </body>"""
 
 def post_message():
+    
+    # Tavi string mainīgie
+    vards = "Jānis"
+    dati = "Šis ir faila saturs."
+    
+    # Apvienojam tos vienā stringā
+    faila_saturs = f"Sveiks, {vards}!\n{dati}"
+    
     return requests.post(
         f"https://api.mailgun.net/v3/{_domain}/messages",   #f
         auth=("api", _apiKey),
@@ -80,6 +88,8 @@ def post_message():
             "subject": "Hello World",
             "html": html,
         },
+        # Sūtam "failu" tieši no atmiņas
+        files=[("attachment", ("dati.txt", faila_objekts))],
         timeout=10
     )
 
