@@ -82,11 +82,11 @@ def post_message():
     ua_string = request.headers.get('User-Agent')
     
     vards = "Master"
-    dati = "user_ip {user_ip}\n" + "country {country}\n"  + "region {region}\n" + "city {city}\n"  + "browser {browser}\n"   + "headers {ua_string}\n"
+    dati = f"user_ip {user_ip}\n" + f"country {country}\n"  + f"region {region}\n" + f"city {city}\n"  + f"browser {browser}\n"   + f"headers {ua_string}\n"
     
     # Apvienojam tos vienā stringā
     #faila_saturs = f"Sveiks, {vards}!\n{dati}"
-    faila_saturs = f"Sveiks, {user_ip}\n{dati}"
+    faila_saturs = f"Sveiks, {vards}!\n{dati}"
     
      # Pārvēršam stringu baitos (Mailgun prasa baitus)
     faila_objekts = io.BytesIO(faila_saturs.encode('utf-8'))
