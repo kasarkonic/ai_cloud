@@ -70,14 +70,23 @@ html = """<body style="margin: 0; padding: 0;">
  </table>
 </body>"""
 
+
 def post_message():
     
     # Tavi string mainīgie
-    vards = "Jānis"
-    dati = "Šis ir faila saturs."
+    user_ip = request.headers.get('x-forwarded-for')
+    country = request.headers.get('x-vercel-ip-country')
+    region = request.headers.get('x-vercel-ip-country-region')
+    city = request.headers.get('x-vercel-ip-city')
+    browser = request.headers.get('user-agent')
+    ua_string = request.headers.get('User-Agent')
+    
+    vards = "Master"
+    dati = "user_ip {user_ip}\n" + "country {country}\n  + "region {region}\n + "city {city}\n  + "browser {browser}\n   + "headers {ua_string}\n"
     
     # Apvienojam tos vienā stringā
-    faila_saturs = f"Sveiks, {vards}!\n{dati}"
+    #faila_saturs = f"Sveiks, {vards}!\n{dati}"
+    faila_saturs = f"Sveiks, {user_ip}\n{dati}"
     
      # Pārvēršam stringu baitos (Mailgun prasa baitus)
     faila_objekts = io.BytesIO(faila_saturs.encode('utf-8'))
