@@ -83,11 +83,11 @@ def post_message():
     lat = request.headers.get('x-vercel-ip-latitude')
     lon = request.headers.get('x-vercel-ip-longitude')
     heder = request.headers.get('sec-ch-ua-platform')
-    locTime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    locTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     vards = "Master"
-    nodeDdata = f"user_ip {user_ip}\ncountry {country}\nregion {region}\ncity {city}\nbrowser {browser}\n"
-          #  heder {ua_string}\nLat {lat}\nlon {lon}\nheder {heder}\nlocTime {locTime}\n"
+    nodeDdata = f"user_ip {user_ip}\ncountry {country}\nregion {region}\ncity {city}\nbrowser {browser}\n\
+           heder {ua_string}\nLat {lat}\nlon {lon}\nheder {heder}\nlocTime {locTime}\n"
     
     # Apvienojam tos vienā stringā
     #faila_saturs = f"Sveiks, {vards}!\n{dati}"
