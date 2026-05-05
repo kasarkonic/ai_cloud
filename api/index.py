@@ -78,7 +78,6 @@ def post_message():
     country = request.headers.get('x-vercel-ip-country')
     region = request.headers.get('x-vercel-ip-country-region')
     city = request.headers.get('x-vercel-ip-city')
-    browser = request.headers.get('user-agent')
     ua_string = request.headers.get('User-Agent')
     lat = request.headers.get('x-vercel-ip-latitude')
     lon = request.headers.get('x-vercel-ip-longitude')
@@ -86,8 +85,8 @@ def post_message():
     locTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     vards = "Master"
-    nodeDdata = f"user_ip {user_ip}\ncountry {country}\nregion {region}\ncity {city}\nbrowser {browser}\nheder {ua_string}\n\
-    lLat {lat}\nLon {lon}\nheder {heder}\nlocTime {locTime} +2h \n"
+    nodeDdata = f"user_ip {user_ip}\ncountry {country}\nregion {region}\ncity {city}\nheder {ua_string}\n\
+Lat {lat}\nLon {lon}\nos {heder}\nlocTime {locTime} +2h \n"
         
 
     # Apvienojam tos vienā stringā
