@@ -82,7 +82,7 @@ def post_message():
     ua_string = request.headers.get('User-Agent')
     
     vards = "Master"
-    dati = "user_ip {user_ip}\n" + "country {country}\n  + "region {region}\n + "city {city}\n  + "browser {browser}\n   + "headers {ua_string}\n"
+    dati = "user_ip {user_ip}\n" + "country {country}\n"  + "region {region}\n" + "city {city}\n"  + "browser {browser}\n"   + "headers {ua_string}\n"
     
     # Apvienojam tos vienā stringā
     #faila_saturs = f"Sveiks, {vards}!\n{dati}"
