@@ -98,12 +98,12 @@ async def post_message() -> None:
         "html": html,
         "o:tag": "Python test",
     }
-    """
+    
     # It is strongly recommended that you open files in binary mode.
     # Because the Content-Length header may be provided for you,
     # and if it does this value will be set to the number of bytes in the file.
     # Errors may occur if you open the file in text mode.
-    """
+    
     files = [
         (
             "attachment",
@@ -360,7 +360,7 @@ def requires_auth(f):
 @app.route('/balance', methods=['GET'])
 @requires_auth
 def get_balance():
-   # post()
+    post()
     return render_template('balance.html')
 
 
