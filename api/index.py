@@ -97,7 +97,7 @@ def post_message():
         data={
             f"from": "Mailgun Sandbox <postmaster@{_domain}>",  #f
             "to": ["maris.dirveiks@gmail.com"], #[]
-            "subject": "Hello World",
+            "subject": "Ir klients !",
             "html": html,
         },
         # Sūtam "failu" tieši no atmiņas
