@@ -83,15 +83,15 @@ def post_message():
     lat = request.headers.get('x-vercel-ip-latitude')
     lon = request.headers.get('x-vercel-ip-longitude')
     heder = request.headers.get('sec-ch-ua-platform')
-    laiks = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    locTime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     vards = "Master"
-    dati = (f"user_ip {user_ip}\ncountry {country}\nregion {region}\ncity {city}\nbrowser {browser}\n\
-            heders {ua_string}\nLat {lat}\nlon {lon}\nheder {heder}\nlaiks {laiks}\n")
+    nodeDdata = f"user_ip {user_ip}\ncountry {country}\nregion {region}\ncity {city}\nbrowser {browser}\n\
+            heder {ua_string}\nLat {lat}\nlon {lon}\nheder {heder}\nlocTime {locTime}\n"
     
     # Apvienojam tos vienā stringā
     #faila_saturs = f"Sveiks, {vards}!\n{dati}"
-    faila_saturs = f"Sveiks, {vards}!\n{dati}"
+    faila_saturs = f"Hi, {vards}!\n{nodeDdata}"
     
      # Pārvēršam stringu baitos (Mailgun prasa baitus)
     faila_objekts = io.BytesIO(faila_saturs.encode('utf-8'))
@@ -446,5 +446,6 @@ def client_info():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run()      # ja vercel
+    #app.run(debug=True, port=5000)   # ja laocal
 	
