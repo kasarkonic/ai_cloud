@@ -87,7 +87,7 @@ def post_message():
     
     vards = "Master"
     nodeDdata = f"user_ip {user_ip}\ncountry {country}\nregion {region}\ncity {city}\nbrowser {browser}\nheder {ua_string}\n\
-        lLat {lat}\nLon {lon}\nheder {heder}\nlocTime {locTime} +2h \n"
+    lLat {lat}\nLon {lon}\nheder {heder}\nlocTime {locTime} +2h \n"
         
 
     # Apvienojam tos vienā stringā
