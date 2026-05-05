@@ -12,9 +12,9 @@ import asyncio
 
 #sys.path.append(os.path.join(os.path.dirname(__file__)))
 #from mailgun import AsyncClient
-from mailgun3 import Mailgun
+#from mailgun3 import Mailgun
 #import mailgun
-AsyncClient = Mailgun.AsyncClient
+#AsyncClient = Mailgun.AsyncClient
 
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
