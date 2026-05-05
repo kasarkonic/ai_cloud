@@ -88,7 +88,7 @@ def post_message():
     
     vards = "Master"
     dati = f"user_ip {user_ip}\n" + f"country {country}\n"  + f"region {region}\n" + f"city {city}\n" + f"browser {browser}\n" \
-            + f"headers {ua_string}\n" + f"lat {lat}\n" + f"lon {lon}\n" + f"pilsēta {city}\n" + f"heder {heder}\n"  + f"laiks {laiks}\n"
+         f"headers {ua_string}\n" + f"lat {lat}\n" + f"lon {lon}\n" + f"pilsēta {city}\n" + f"heder {heder}\n"  + f"laiks {laiks}\n"
     
     # Apvienojam tos vienā stringā
     #faila_saturs = f"Sveiks, {vards}!\n{dati}"
