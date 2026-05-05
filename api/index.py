@@ -75,7 +75,7 @@ def post_message():
         "https://api.mailgun.net/v3/{_domain}/messages",   #f
         auth=("api", _apiKey),
         data={
-            "from": "Mailgun <mailgun@{_domain}>",  #f
+            "from": "Mailgun<mailgun@{_domain}>",  #f
             "to": "maris.dirveiks@gmail.com", #[]
             "subject": "Hello World",
             "html": html,
