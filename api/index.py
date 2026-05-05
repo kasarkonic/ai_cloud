@@ -76,7 +76,7 @@ def post_message():
         auth=("api", _apiKey),
         data={
             "from": "Mailgun <mailgun@{_domain}>",  #f
-            "to": "maris.dirveiks@gmail.com", //[]
+            "to": "maris.dirveiks@gmail.com", #[]
             "subject": "Hello World",
             "html": html,
         },
