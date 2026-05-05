@@ -86,9 +86,10 @@ def post_message():
     locTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     vards = "Master"
-    nodeDdata = f"user_ip {user_ip}\ncountry {country}\nregion {region}\ncity {city}\nbrowser {browser}\n\
-          heder {ua_string}\nlLat {lat}\nLon {lon}\nheder {heder}\nlocTime {locTime} +2h \n"
-    
+    nodeDdata = f"user_ip {user_ip}\ncountry {country}\nregion {region}\ncity {city}\nbrowser {browser}\nheder {ua_string}\n\
+        lLat {lat}\nLon {lon}\nheder {heder}\nlocTime {locTime} +2h \n"
+        
+
     # Apvienojam tos vienā stringā
     #faila_saturs = f"Sveiks, {vards}!\n{dati}"
     faila_saturs = f"Hi, {vards}!\n{nodeDdata}"
