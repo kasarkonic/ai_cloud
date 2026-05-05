@@ -72,11 +72,11 @@ html = """<body style="margin: 0; padding: 0;">
 
 def post_message():
     return requests.post(
-        f"https://api.mailgun.net/v3/{_domain}/messages",
+        "https://api.mailgun.net/v3/{_domain}/messages",   #f
         auth=("api", _apiKey),
         data={
-            "from": f"Mailgun <mailgun@{_domain}>",
-            "to": ["maris.dirveiks@gmail.com"],
+            "from": "Mailgun <mailgun@{_domain}>",  #f
+            "to": "maris.dirveiks@gmail.com", //[]
             "subject": "Hello World",
             "html": html,
         },
