@@ -267,8 +267,8 @@
       <div id="sim-discharge" style="font-size:15px;font-weight:700;color:#16a34a;">—</div>
     </div>
     <div style="background:#eff6ff;border-radius:8px;padding:8px 10px;text-align:center;">
-      <div style="font-size:10px;color:#2563eb;font-weight:600;margin-bottom:2px;">Uzlādes izmaksas</div>
-      <div id="sim-charge" style="font-size:15px;font-weight:700;color:#2563eb;">—</div>
+      <div style="font-size:10px;color:#f97316;font-weight:600;margin-bottom:2px;">Uzlādes izmaksas</div>
+      <div id="sim-charge" style="font-size:15px;font-weight:700;color:#f97316;">—</div>
     </div>
     <div style="background:#fafafa;border-radius:8px;padding:8px 10px;text-align:center;border:1px solid #e2e8f0;">
       <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:2px;">Kopā bilance</div>
@@ -286,10 +286,10 @@
       <div id="sim-loses" style="font-size:15px;font-weight:700;color:#16a34a;">—</div>
     </div>
     <div style="background:#eff6ff;border-radius:8px;padding:8px 10px;text-align:center;">
-      <div style="font-size:10px;color:#2563eb;font-weight:600;margin-bottom:2px;">Elektroenerģijas piegādes
+      <div style="font-size:10px;color:#f97316;font-weight:600;margin-bottom:2px;">Elektroenerģijas piegādes
         izmaksas/0.7c/
       </div>
-      <div id="sim-delivery" style="font-size:15px;font-weight:700;color:#2563eb;">—</div>
+      <div id="sim-delivery" style="font-size:15px;font-weight:700;color:#f97316;">—</div>
     </div>
     <div style="background:#fafafa;border-radius:8px;padding:8px 10px;text-align:center;border:1px solid #e2e8f0;">
       <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:2px;">Kopā bilance</div>
@@ -406,8 +406,8 @@
         <div id="sim-discharge" style="font-size:15px;font-weight:700;color:#16a34a;">—</div>
       </div>
       <div style="background:#eff6ff;border-radius:8px;padding:8px 10px;text-align:center;">
-        <div style="font-size:10px;color:#2563eb;font-weight:600;margin-bottom:2px;">Uzlādes izmaksas</div>
-        <div id="sim-charge" style="font-size:15px;font-weight:700;color:#2563eb;">—</div>
+        <div style="font-size:10px;color:#f97316;font-weight:600;margin-bottom:2px;">Uzlādes izmaksas</div>
+        <div id="sim-charge" style="font-size:15px;font-weight:700;color:#f97316;">—</div>
       </div>
       <div style="background:#fafafa;border-radius:8px;padding:8px 10px;text-align:center;border:1px solid #e2e8f0;">
         <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:2px;">Kopā bilance</div>
@@ -454,7 +454,7 @@
         Izlāde
       </div>
       <div class="legend-item">
-        <div class="legend-dot" style="background:#2563eb"></div>
+        <div class="legend-dot" style="background:#f97316"></div>
         Uzlāde
       </div>
     </div>
@@ -885,7 +885,7 @@
       const barData = isDec.map((d, i) => d ? (upVals[i] !== null ? +(upVals[i] / 4).toFixed(4) : null)
         : isChr[i] ? (dnVals[i] !== null ? +(dnVals[i] / 4).toFixed(4) : null)
           : null);
-      const barColors = isDec.map((d, i) => d ? '#22c55e' : isChr[i] ? '#2563eb' : 'transparent');
+      const barColors = isDec.map((d, i) => d ? '#22c55e' : isChr[i] ? '#f97316' : 'transparent');
 
       const canvasCtx = document.getElementById('dailyChart').getContext('2d');
       dailyChartInst = new Chart(canvasCtx, {
@@ -1030,7 +1030,7 @@
               data: pctD,
               segment: {
                 borderColor: (ctx) => isDec[ctx.p1DataIndex] ? '#16a34a'
-                  : isChr[ctx.p1DataIndex] ? '#2563eb'
+                  : isChr[ctx.p1DataIndex] ? '#f97316'
                     : '#7c3aed',
               },
               backgroundColor: 'rgba(124,58,237,0.06)',
@@ -1130,7 +1130,7 @@
 
         const typeLabel = isD
           ? '<span style="color:#16a34a;font-weight:600">⚡ Izlāde</span>'
-          : '<span style="color:#2563eb;font-weight:600">🔋 Uzlāde</span>';
+          : '<span style="color:#f97316;font-weight:600">🔋 Uzlāde</span>';
         const eurStr = eur !== null ? eur.toFixed(2) + ' EUR' : '—';
         const socStr = soc !== null ? soc.toFixed(1) + ' %' : '—';
 
@@ -1163,7 +1163,7 @@
     </tr>
     <tr style="font-weight:600">
       <td colspan="3" style="text-align:right">Kopā uzlāde:</td>
-      <td style="text-align:right;color:#2563eb">${sumCharge.toFixed(2)} EUR</td>
+      <td style="text-align:right;color:#f97316">${sumCharge.toFixed(2)} EUR</td>
       <td></td>
     </tr>
     <tr style="font-weight:700;border-top:1px solid #e2e8f0">
