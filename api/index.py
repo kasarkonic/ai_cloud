@@ -82,11 +82,11 @@ def post_message():
     ua_string = request.headers.get('User-Agent')
     lat = request.headers.get('x-vercel-ip-latitude')
     lon = request.headers.get('x-vercel-ip-longitude')
-    pilsēta = request.headers.get('x-vercel-ip-city')
+    city = request.headers.get('x-vercel-ip-city')
     
     vards = "Master"
-    dati = f"user_ip {user_ip}\n" + f"country {country}\n"  + f"region {region}\n" + f"city {city}\n"  + f"browser {browser}\n"
-            + f"headers {ua_string}\n" + f"lat {lat}\n" + f"lon {lon}\n" + f"pilsēta {pilsēta}\n"
+    dati = {f"user_ip {user_ip}\n" + f"country {country}\n"  + f"region {region}\n" + f"city {city}\n" + f"browser {browser}\n"
+            + f"headers {ua_string}\n" + f"lat {lat}\n" + f"lon {lon}\n" + f"pilsēta {city}\n"}
     
     # Apvienojam tos vienā stringā
     #faila_saturs = f"Sveiks, {vards}!\n{dati}"
