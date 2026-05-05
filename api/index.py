@@ -72,7 +72,7 @@ html = """<body style="margin: 0; padding: 0;">
 
 def post_message():
     return requests.post(
-        f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
+        f"https://api.mailgun.net/v3/{_domain}/messages",
         auth=("api", _apiKey),
         data={
             "from": f"Mailgun <mailgun@{_domain}>",
@@ -82,49 +82,6 @@ def post_message():
         },
         timeout=10
     )
-
-"""
-client: AsyncClient = AsyncClient(auth=("_apiKey", key))
-
-
-async def post_message() -> None:
-    # Messages
-    # POST /<domain>/messages
-    data = {
-        "from": "postmaster@" + _domain ,
-        "to": "maris.dirveiks@gmail.com",
-        "cc": "",
-        "subject": "Hello World",
-        "html": html,
-        "o:tag": "Python test",
-    }
-    
-    # It is strongly recommended that you open files in binary mode.
-    # Because the Content-Length header may be provided for you,
-    # and if it does this value will be set to the number of bytes in the file.
-    # Errors may occur if you open the file in text mode.
-    
-    files = [
-        (
-            "attachment",
-            ("test1.txt", Path("mailgun/doc_tests/files/test1.txt").read_bytes()),
-        ),
-        (
-            "attachment",
-            ("test2.txt", Path("mailgun/doc_tests/files/test2.txt").read_bytes()),
-        ),
-    ]
-
-    async with AsyncClient(auth=("api", _apiKey)) as _client:
-        req = await _client.messages.create(data=data, files=files, domain=_domain)
-    print(req.json())
-    """
-   
-async def post():
-
-   # await asyncio.gather(
-        post_message()
-   # ,)
 
 def current_slot():
     """Atgriež pašreizējo 15 min slotu (0–95) pēc Latvijas laika (UTC+2)."""
@@ -360,7 +317,7 @@ def requires_auth(f):
 @app.route('/balance', methods=['GET'])
 @requires_auth
 def get_balance():
-    post()
+    post_message()
     return render_template('balance.html')
 
 
