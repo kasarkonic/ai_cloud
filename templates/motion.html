@@ -96,11 +96,11 @@
     <p>Nofilmējiet vai izvēlieties video failu apstrādei ar GPU</p>
 
     <!-- Klikšķināma zona faila izvēlei -->
-    <div class="upload-area" onclick="document.getElementById('videoInput').click()">
+    <label  class="upload-area" onclick="document.getElementById('videoInput').click()">
         <div class="upload-icon">🎥</div>
         <div id="uploadLabel">Spiediet, lai uzņemtu vai izvēlētos video</div>
         <div id="fileInfo"></div>
-    </div>
+    </label >
 
     <!-- Mobilajiem pielāgots failu input (capture="environment" atver aizmugurējo kameru) -->
     <input type="file" id="videoInput" accept="video/*" capture="environment" onchange="fileSelected()">
