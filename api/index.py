@@ -319,7 +319,7 @@ def get_karlis1():
     return render_template('karlis1.html')
 
 @app.route('/motion', methods=['GET'])
-def get_info():
+def get_motion():
     return render_template('motion.html')
 
 
