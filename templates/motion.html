@@ -1,32 +1,218 @@
-<!-- HTML failu izvēlei vai filmēšanai -->
-<input type="file" id="videoInput" accept="video/*" capture="environment">
-<button onclick="uploadVideo()">Apstrādāt video</button>
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Apstrādes Portāls</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #16a34a;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .container {
+            background: var(--card);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        h1 { font-size: 24px; margin-bottom: 8px; }
+        p { color: #64748b; font-size: 14px; margin-bottom: 24px; }
+        
+        /* Failu izvēles zona */
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 40px 20px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            margin-bottom: 20px;
+        }
+        .upload-area:hover { border-color: var(--primary); }
+        .upload-icon { font-size: 40px; margin-bottom: 10px; }
+        
+        /* Slēptais oriģinālais input */
+        #videoInput { display: none; }
+        
+        /* Pogas */
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        
+        /* Statusa un progresa sekcija */
+        .status-container {
+            display: none;
+            margin-top: 24px;
+            padding: 16px;
+            border-radius: 8px;
+            background-color: #f1f5f9;
+        }
+        .spinner {
+            border: 3px solid #cbd5e1;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        #statusText { font-weight: 600; font-size: 14px; }
+        #fileInfo { font-size: 12px; color: #64748b; margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Video Apstrāde</h1>
+    <p>Nofilmējiet vai izvēlieties video failu apstrādei ar GPU</p>
+
+    <!-- Klikšķināma zona faila izvēlei -->
+    <div class="upload-area" onclick="document.getElementById('videoInput').click()">
+        <div class="upload-icon">🎥</div>
+        <div id="uploadLabel">Spiediet, lai uzņemtu vai izvēlētos video</div>
+        <div id="fileInfo"></div>
+    </div>
+
+    <!-- Mobilajiem pielāgots failu input (capture="environment" atver aizmugurējo kameru) -->
+    <input type="file" id="videoInput" accept="video/*" capture="environment" onchange="fileSelected()">
+
+    <button id="submitBtn" onclick="startProcessing()" disabled>Sākt apstrādi</button>
+
+    <!-- Slēptais statusa logs, kas parādās procesa laikā -->
+    <div class="status-container" id="statusContainer">
+        <div class="spinner" id="statusSpinner"></div>
+        <div id="statusText">Gatavojas augšupielādei...</div>
+    </div>
+</div>
 
 <script>
-async function uploadVideo() {
-    const input = document.getElementById('videoInput');
-    if (input.files.length === 0) return alert("Izvēlies video!");
+    // ŠEIT IERAKSTI SAVU DROŠĀ TŪNEĻA (PIEM. CLOUDFLARE) ADRESI, KAS SAVIENO AR WINDOWS DATORU
+    const API_BASE_URL = "https://cloudflare.com"; 
+    
+    let selectedFile = null;
 
-    const formData = new FormData();
-    formData.append("file", input.files[0]);
-
-    // Sūtām uz Vercel maršrutu (router)
-    const response = await fetch('/api/upload', { 
-        method: 'POST',
-        body: formData
-    });
-
-    if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        
-        // Izveidojam lejupielādes saiti vai parādām video ekrānā
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = "apstradat_video.mp4";
-        a.click();
-    } else {
-        alert("Kļūda apstrādē.");
+    // Funkcija, kas nostrādā, kad lietotājs izvēlas failu
+    function fileSelected() {
+        const input = document.getElementById('videoInput');
+        if (input.files.length > 0) {
+            selectedFile = input.files[0];
+            const sizeInMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
+            
+            document.getElementById('uploadLabel').innerText = "Video izvēlēts!";
+            document.getElementById('fileInfo').innerText = `${selectedFile.name} (${sizeInMB} MB)`;
+            document.getElementById('submitBtn').disabled = false;
+        }
     }
-}
+
+    // 1. SOLIS: Video nosūtīšana un asinhronā uzdevuma izveide
+    async function startProcessing() {
+        if (!selectedFile) return;
+
+        const submitBtn = document.getElementById('submitBtn');
+        const statusContainer = document.getElementById('statusContainer');
+        const statusText = document.getElementById('statusText');
+        const statusSpinner = document.getElementById('statusSpinner');
+
+        // Bloķējam pogu un rādām ielādi
+        submitBtn.disabled = true;
+        statusContainer.style.display = "block";
+        statusText.innerText = "Augšupielādē video uz serveri...";
+
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+
+        try {
+            // Sūtām failu pa taisno uz drošo tuneli (IP paliek slēpta)
+            const response = await fetch(`${API_BASE_URL}/upload`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) throw new Error("Servera kļūda augšupielādējot.");
+
+            const data = await response.json();
+            const taskId = data.task_id; // Saņemam unikālo apstrādes ID no Windows datora
+
+            statusText.innerText = "Video saņemts. Gaida rindā uz GPU...";
+            
+            // 2. SOLIS: Sākam asinhrono statusa pārbaudi (Polling)
+            checkStatus(taskId);
+
+        } catch (error) {
+            console.error(error);
+            statusSpinner.style.display = "none";
+            statusText.innerText = "Kļūda: Neizdevās nosūtīt failu.";
+            submitBtn.disabled = false;
+        }
+    }
+
+    // 2. SOLIS: Regulāra statusa vaicāšana ik pēc 3 sekundēm
+    function checkStatus(taskId) {
+        const statusText = document.getElementById('statusText');
+        const statusSpinner = document.getElementById('statusSpinner');
+
+        const interval = setInterval(async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/status/${taskId}`);
+                if (!response.ok) return;
+
+                const data = await response.json();
+
+                if (data.status === "PROCESĀ") {
+                    statusText.innerText = "C++ aplikācija apstrādā video. Lūdzu, uzgaidiet...";
+                } 
+                else if (data.status === "GATAVS") {
+                    clearInterval(interval);
+                    statusSpinner.style.display = "none";
+                    statusText.innerHTML = `<span style="color: var(--success)">✓ Apstrāde pabeigta!</span><br>Tūlīt sāksies lejupielāde.`;
+                    
+                    // 3. SOLIS: Automātiska gatavā faila lejupielāde
+                    window.location.href = `${API_BASE_URL}/download/${taskId}`;
+                    
+                    // Atbloķējam pogu jaunai darbībai
+                    document.getElementById('submitBtn').disabled = false;
+                } 
+                else if (data.status === "KĻŪDA") {
+                    clearInterval(interval);
+                    statusSpinner.style.display = "none";
+                    statusText.innerText = "Apstrādes laikā radās C++ sistēmas kļūda.";
+                    document.getElementById('submitBtn').disabled = false;
+                }
+            } catch (err) {
+                console.error("Kļūda pārbaudot statusu:", err);
+            }
+        }, 3000); // 3000 ms = 3 sekundes
+    }
 </script>
+
+</body>
+</html>
