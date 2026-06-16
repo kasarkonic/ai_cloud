@@ -318,6 +318,10 @@ def get_karlis1():
     # render_template automātiski meklē failu "templates" mapē
     return render_template('karlis1.html')
 
+@app.route('/motion', methods=['GET'])
+def get_info():
+    return render_template('motion.html')
+
 
 @app.route('/info', methods=['GET'])
 def get_info():
