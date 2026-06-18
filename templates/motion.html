@@ -38,6 +38,7 @@
         
         /* Failu izvēles zona */
         .upload-area {
+            display: block;
             border: 2px dashed #cbd5e1;
             border-radius: 12px;
             padding: 40px 20px;
@@ -95,15 +96,15 @@
     <h1>Video Apstrāde</h1>
     <p>Nofilmējiet vai izvēlieties video failu apstrādei ar GPU</p>
 
-    <!-- Klikšķināma zona faila izvēlei -->
-    <label  class="upload-area" onclick="document.getElementById('videoInput').click()">
+    <!-- Piesaistīts 'for="videoInput"', lai Android ierīces dabiski atvērtu failu pārlūku -->
+    <label for="videoInput" class="upload-area">
         <div class="upload-icon">🎥</div>
         <div id="uploadLabel">Spiediet, lai uzņemtu vai izvēlētos video</div>
         <div id="fileInfo"></div>
-    </label >
+    </label>
 
-    <!-- Mobilajiem pielāgots failu input (capture="environment" atver aizmugurējo kameru) -->
-    <input type="file" id="videoInput" accept="video/*" capture="environment" onchange="fileSelected()">
+    <!-- Bez capture="environment" atribūta Android korekti piedāvās izvēli starp kameru un galeriju -->
+    <input type="file" id="videoInput" accept="video/*" onchange="fileSelected()">
 
     <button id="submitBtn" onclick="startProcessing()" disabled>Sākt apstrādi</button>
 
@@ -115,12 +116,11 @@
 </div>
 
 <script>
-    // ŠEIT IERAKSTI SAVU DROŠĀ TŪNEĻA (PIEM. CLOUDFLARE) ADRESI, KAS SAVIENO AR WINDOWS DATORU
-    const API_BASE_URL = "https://cloudflare.com"; 
+    // ŠEIT IERAKSTI SAVU DROŠĀ TŪNEĻA ADRESI (Piemēram, ngrok adresi)
+    const API_BASE_URL = "https://ngrok-free.app"; 
     
     let selectedFile = null;
 
-    // Funkcija, kas nostrādā, kad lietotājs izvēlas failu
     function fileSelected() {
         const input = document.getElementById('videoInput');
         if (input.files.length > 0) {
@@ -133,7 +133,6 @@
         }
     }
 
-    // 1. SOLIS: Video nosūtīšana un asinhronā uzdevuma izveide
     async function startProcessing() {
         if (!selectedFile) return;
 
@@ -142,7 +141,6 @@
         const statusText = document.getElementById('statusText');
         const statusSpinner = document.getElementById('statusSpinner');
 
-        // Bloķējam pogu un rādām ielādi
         submitBtn.disabled = true;
         statusContainer.style.display = "block";
         statusText.innerText = "Augšupielādē video uz serveri...";
@@ -151,7 +149,6 @@
         formData.append("file", selectedFile);
 
         try {
-            // Sūtām failu pa taisno uz drošo tuneli (IP paliek slēpta)
             const response = await fetch(`${API_BASE_URL}/upload`, {
                 method: 'POST',
                 body: formData
@@ -160,11 +157,10 @@
             if (!response.ok) throw new Error("Servera kļūda augšupielādējot.");
 
             const data = await response.json();
-            const taskId = data.task_id; // Saņemam unikālo apstrādes ID no Windows datora
+            const taskId = data.task_id;
 
             statusText.innerText = "Video saņemts. Gaida rindā uz GPU...";
             
-            // 2. SOLIS: Sākam asinhrono statusa pārbaudi (Polling)
             checkStatus(taskId);
 
         } catch (error) {
@@ -175,7 +171,6 @@
         }
     }
 
-    // 2. SOLIS: Regulāra statusa vaicāšana ik pēc 3 sekundēm
     function checkStatus(taskId) {
         const statusText = document.getElementById('statusText');
         const statusSpinner = document.getElementById('statusSpinner');
@@ -188,17 +183,15 @@
                 const data = await response.json();
 
                 if (data.status === "PROCESĀ") {
-                    statusText.innerText = "C++ aplikācija apstrādā video. Lūdzu, uzgaidiet...";
+                    // Papildināts: parāda C++ servera sūtītos reāllaika procentus
+                    statusText.innerText = `Qt aplikācija apstrādā video: ${data.progress || 0}%...`;
                 } 
                 else if (data.status === "GATAVS") {
                     clearInterval(interval);
                     statusSpinner.style.display = "none";
                     statusText.innerHTML = `<span style="color: var(--success)">✓ Apstrāde pabeigta!</span><br>Tūlīt sāksies lejupielāde.`;
                     
-                    // 3. SOLIS: Automātiska gatavā faila lejupielāde
                     window.location.href = `${API_BASE_URL}/download/${taskId}`;
-                    
-                    // Atbloķējam pogu jaunai darbībai
                     document.getElementById('submitBtn').disabled = false;
                 } 
                 else if (data.status === "KĻŪDA") {
@@ -210,7 +203,7 @@
             } catch (err) {
                 console.error("Kļūda pārbaudot statusu:", err);
             }
-        }, 3000); // 3000 ms = 3 sekundes
+        }, 3000);
     }
 </script>
 
