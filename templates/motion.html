@@ -104,7 +104,7 @@
     </label>
 
     <!-- Bez capture="environment" atribūta Android korekti piedāvās izvēli starp kameru un galeriju -->
-    <input type="file" id="videoInput" accept="video/*" onchange="fileSelected()">
+    <input type="file" id="videoInput" accept="video/*" maxduration="10" onchange="fileSelected()">
 
     <button id="submitBtn" onclick="startProcessing()" disabled>Sākt apstrādi</button>
 
@@ -121,17 +121,37 @@
     
     let selectedFile = null;
 
-    function fileSelected() {
-        const input = document.getElementById('videoInput');
-        if (input.files.length > 0) {
-            selectedFile = input.files[0];
-            const sizeInMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
+function fileSelected() {
+    const input = document.getElementById('videoInput');
+    if (input.files.length > 0) {
+        selectedFile = input.files[0];
+        const sizeInMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
+        
+        // Izveidojam pagaidu video elementu, lai nolasītu tā garumu
+        const videoElement = document.createElement('video');
+        videoElement.preload = 'metadata';
+        videoElement.src = URL.createObjectURL(selectedFile);
+        
+        videoElement.onloadedmetadata = function() {
+            URL.revokeObjectURL(videoElement.src);
+            const duration = videoElement.duration;
             
             document.getElementById('uploadLabel').innerText = "Video izvēlēts!";
-            document.getElementById('fileInfo').innerText = `${selectedFile.name} (${sizeInMB} MB)`;
+            
+            // Ja video ir garāks par 10 sekundēm, parādām brīdinājumu
+            if (duration > 10.5) { // 10.5, lai dotu nelielu pielaidi milisekundēm
+                document.getElementById('fileInfo').innerHTML = 
+                    `${selectedFile.name} (${sizeInMB} MB)<br>` +
+                    `<span style="color: #eab308; font-weight: bold;">⚠️ Uzmanību: Video ir ${duration.toFixed(1)}s garš. Tiks apstrādātas tikai pirmās 10 sekundes!</span>`;
+            } else {
+                document.getElementById('fileInfo').innerText = `${selectedFile.name} (${sizeInMB} MB) - Garums: ${duration.toFixed(1)}s`;
+            }
+            
             document.getElementById('submitBtn').disabled = false;
-        }
+        };
     }
+}
+
 
     async function startProcessing() {
         if (!selectedFile) return;
