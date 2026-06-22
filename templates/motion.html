@@ -156,7 +156,7 @@ function fileSelected() {
 
     async function startProcessing() {
         if (!selectedFile) return;
-
+        console.log("function startProcessing()");
         const submitBtn = document.getElementById('submitBtn');
         const statusContainer = document.getElementById('statusContainer');
         const statusText = document.getElementById('statusText');
