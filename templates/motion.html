@@ -115,7 +115,7 @@
         <div id="statusText">Gatavojas augšupielādei...</div>
     </div>
 </div>
-
+ 
 <script>
     // ŠEIT IERAKSTI SAVU DROŠĀ TŪNEĻA ADRESI (Piemēram, ngrok adresi)
     const API_BASE_URL = "https://www.kasarko.lv:8765/"; 
@@ -202,20 +202,26 @@ function fileSelected() {
                 if (!response.ok) return;
 
                 const data = await response.json();
+                console.log("Saņemtie dati no C++ servera:", data);
+                console.log("Pašreizējais stāvoklis (state):", data.state);
 
-                if (data.status === "PROCESĀ") {
+
+
+
+                if (data.state === "processing") {
                     // Papildināts: parāda C++ servera sūtītos reāllaika procentus
                     statusText.innerText = `Qt aplikācija apstrādā video: ${data.progress || 0}%...`;
                 } 
-                else if (data.status === "GATAVS") {
+                else if (data.state === "done") {
                     clearInterval(interval);
                     statusSpinner.style.display = "none";
                     statusText.innerHTML = `<span style="color: var(--success)">✓ Apstrāde pabeigta!</span><br>Tūlīt sāksies lejupielāde.`;
                     
-                    window.location.href = `${API_BASE_URL}/download/${taskId}`;
+                    //window.location.href = `${API_BASE_URL}/download/${taskId}`;
+                    window.location.href = `${API_BASE_URL}/download?id=${taskId}`;
                     document.getElementById('submitBtn').disabled = false;
                 } 
-                else if (data.status === "KĻŪDA") {
+                else if (data.state === "error") {
                     clearInterval(interval);
                     statusSpinner.style.display = "none";
                     statusText.innerText = "Apstrādes laikā radās C++ sistēmas kļūda.";
