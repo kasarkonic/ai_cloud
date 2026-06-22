@@ -156,7 +156,7 @@ function fileSelected() {
 
     async function startProcessing() {
         if (!selectedFile) return;
-        console.log("function startProcessing()");
+        console.log("log: function startProcessing()");
         const submitBtn = document.getElementById('submitBtn');
         const statusContainer = document.getElementById('statusContainer');
         const statusText = document.getElementById('statusText');
@@ -202,8 +202,8 @@ function fileSelected() {
                 if (!response.ok) return;
 
                 const data = await response.json();
-                console.log("Saņemtie dati no C++ servera:", data);
-                console.log("Pašreizējais stāvoklis (state):", data.state);
+                console.log("log: Sanemtie dati no C++ servera:", data);
+                console.log("log: Pasreizejais stavoklis (state):", data.state);
 
 
 
