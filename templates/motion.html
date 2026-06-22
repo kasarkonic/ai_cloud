@@ -118,7 +118,7 @@
  
 <script>
     // ŠEIT IERAKSTI SAVU DROŠĀ TŪNEĻA ADRESI (Piemēram, ngrok adresi)
-    const API_BASE_URL = "https://www.kasarko.lv:8765/"; 
+    const API_BASE_URL = "https://www.kasarko.lv:8765"; 
     
     let selectedFile = null;
 
@@ -178,11 +178,12 @@ function fileSelected() {
             if (!response.ok) throw new Error("Servera kļūda augšupielādējot.");
 
             const data = await response.json();
-            const taskId = data.task_id;
+            //const taskId = data.task_id;
+            const jobId = data.job_id; 
 
             statusText.innerText = "Video saņemts. Gaida rindā uz GPU...";
             
-            checkStatus(taskId);
+            checkStatus(jobId);
 
         } catch (error) {
             console.error(error);
@@ -192,13 +193,13 @@ function fileSelected() {
         }
     }
 
-    function checkStatus(taskId) {
+    function checkStatus(jobId) {
         const statusText = document.getElementById('statusText');
         const statusSpinner = document.getElementById('statusSpinner');
 
         const interval = setInterval(async () => {
             try {
-                const response = await fetch(`${API_BASE_URL}/status/${taskId}`);
+                const response = await fetch(`${API_BASE_URL}/status/${jobId}`);
                 if (!response.ok) return;
 
                 const data = await response.json();
@@ -218,7 +219,7 @@ function fileSelected() {
                     statusText.innerHTML = `<span style="color: var(--success)">✓ Apstrāde pabeigta!</span><br>Tūlīt sāksies lejupielāde.`;
                     
                     //window.location.href = `${API_BASE_URL}/download/${taskId}`;
-                    window.location.href = `${API_BASE_URL}/download?id=${taskId}`;
+                    window.location.href = `${API_BASE_URL}/download?id=${jobId}`;
                     document.getElementById('submitBtn').disabled = false;
                 } 
                 else if (data.state === "error") {
