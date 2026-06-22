@@ -118,122 +118,89 @@
  
 <script>
     // ŠEIT IERAKSTI SAVU DROŠĀ TŪNEĻA ADRESI (Piemēram, ngrok adresi)
-    const API_BASE_URL = "https://www.kasarko.lv:8765"; 
+const API_BASE_URL = "https://www.kasarko.lv:8765";   
+     
+async function startProcessing() {
+    if (!selectedFile) return;
+    console.log("log: function startProcessing()");
     
-    let selectedFile = null;
+    const submitBtn = document.getElementById('submitBtn');
+    const statusContainer = document.getElementById('statusContainer');
+    const statusText = document.getElementById('statusText');
+    const statusSpinner = document.getElementById('statusSpinner');
 
-function fileSelected() {
-    const input = document.getElementById('videoInput');
-    if (input.files.length > 0) {
-        selectedFile = input.files[0];
-        const sizeInMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
+    submitBtn.disabled = true;
+    statusContainer.style.display = "block";
+    statusText.innerText = "Augšupielādē video uz serveri...";
+
+    try {
+        // 🚨 SŪTĀM TĪRUS BAITUS, KĀ TO GAIDA JŪSU C++ handleUpload FUNKCIJA
+        const response = await fetch(`${API_BASE_URL}/upload`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/octet-stream',
+                'X-Filename': selectedFile.name
+            },
+            body: selectedFile // Sūtām pašu failu tieši kā baitu plūsmu
+        });
+
+        if (!response.ok) throw new Error("Servera kļūda augšupielādējot.");
+
+        const data = await response.json();
         
-        // Izveidojam pagaidu video elementu, lai nolasītu tā garumu
-        const videoElement = document.createElement('video');
-        videoElement.preload = 'metadata';
-        videoElement.src = URL.createObjectURL(selectedFile);
+        // 🚨 SASKAŅOTS: Jūsu C++ handleUpload atgriež "job_id", nevis "task_id"
+        const jobId = data.job_id; 
+
+        statusText.innerText = "Video saņemts. Gaida rindā uz GPU...";
         
-        videoElement.onloadedmetadata = function() {
-            URL.revokeObjectURL(videoElement.src);
-            const duration = videoElement.duration;
-            
-            document.getElementById('uploadLabel').innerText = "Video izvēlēts!";
-            
-            // Ja video ir garāks par 10 sekundēm, parādām brīdinājumu
-            if (duration > 10.5) { // 10.5, lai dotu nelielu pielaidi milisekundēm
-                document.getElementById('fileInfo').innerHTML = 
-                    `${selectedFile.name} (${sizeInMB} MB)<br>` +
-                    `<span style="color: #eab308; font-weight: bold;">⚠️ Uzmanību: Video ir ${duration.toFixed(1)}s garš. Tiks apstrādātas tikai pirmās 10 sekundes!</span>`;
-            } else {
-                document.getElementById('fileInfo').innerText = `${selectedFile.name} (${sizeInMB} MB) - Garums: ${duration.toFixed(1)}s`;
-            }
-            
-            document.getElementById('submitBtn').disabled = false;
-        };
+        // Palaižam statusa pārbaudi ar pareizo ID
+        checkStatus(jobId);
+
+    } catch (error) {
+        console.error(error);
+        statusSpinner.style.display = "none";
+        statusText.innerText = "Kļūda: Neizdevās nosūtīt failu.";
+        submitBtn.disabled = false;
     }
 }
 
+function checkStatus(jobId) {
+    const statusText = document.getElementById('statusText');
+    const statusSpinner = document.getElementById('statusSpinner');
 
-    async function startProcessing() {
-        if (!selectedFile) return;
-        console.log("log: function startProcessing()");
-        const submitBtn = document.getElementById('submitBtn');
-        const statusContainer = document.getElementById('statusContainer');
-        const statusText = document.getElementById('statusText');
-        const statusSpinner = document.getElementById('statusSpinner');
-
-        submitBtn.disabled = true;
-        statusContainer.style.display = "block";
-        statusText.innerText = "Augšupielādē video uz serveri...";
-
-        const formData = new FormData();
-        formData.append("file", selectedFile);
-
+    const interval = setInterval(async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/upload`, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) throw new Error("Servera kļūda augšupielādējot.");
+            // 🚨 SASKAŅOTS AR C++ MARŠRUTU: /status?id=JOB_ID
+            const response = await fetch(`${API_BASE_URL}/status?id=${jobId}`);
+            if (!response.ok) return;
 
             const data = await response.json();
-            //const taskId = data.task_id;
-            const jobId = data.job_id; 
+            console.log("log: Saņemtie dati no C++ servera:", data);
+            console.log("log: Pašreizējais stāvoklis (state):", data.state);
 
-            statusText.innerText = "Video saņemts. Gaida rindā uz GPU...";
-            
-            checkStatus(jobId);
-
-        } catch (error) {
-            console.error(error);
-            statusSpinner.style.display = "none";
-            statusText.innerText = "Kļūda: Neizdevās nosūtīt failu.";
-            submitBtn.disabled = false;
-        }
-    }
-
-    function checkStatus(jobId) {
-        const statusText = document.getElementById('statusText');
-        const statusSpinner = document.getElementById('statusSpinner');
-
-        const interval = setInterval(async () => {
-            try {
-                const response = await fetch(`${API_BASE_URL}/status/${jobId}`);
-                if (!response.ok) return;
-
-                const data = await response.json();
-                console.log("log: Sanemtie dati no C++ servera:", data);
-                console.log("log: Pasreizejais stavoklis (state):", data.state);
-
-
-
-
-                if (data.state === "processing") {
-                    // Papildināts: parāda C++ servera sūtītos reāllaika procentus
-                    statusText.innerText = `Qt aplikācija apstrādā video: ${data.progress || 0}%...`;
-                } 
-                else if (data.state === "done") {
-                    clearInterval(interval);
-                    statusSpinner.style.display = "none";
-                    statusText.innerHTML = `<span style="color: var(--success)">✓ Apstrāde pabeigta!</span><br>Tūlīt sāksies lejupielāde.`;
-                    
-                    //window.location.href = `${API_BASE_URL}/download/${taskId}`;
-                    window.location.href = `${API_BASE_URL}/download?id=${jobId}`;
-                    document.getElementById('submitBtn').disabled = false;
-                } 
-                else if (data.state === "error") {
-                    clearInterval(interval);
-                    statusSpinner.style.display = "none";
-                    statusText.innerText = "Apstrādes laikā radās C++ sistēmas kļūda.";
-                    document.getElementById('submitBtn').disabled = false;
-                }
-            } catch (err) {
-                console.error("Kļūda pārbaudot statusu:", err);
+            // Pārbaudes bāzētas uz Jūsu C++ klases stāvokļiem ("processing", "done", "error")
+            if (data.state === "processing") {
+                // Jūsu C++ kods procentus nodrošina mainīgajā "pct", bet posmu "stage"
+                const stageInfo = data.stage ? ` [${data.stage}]` : "";
+                statusText.innerText = `Qt aplikācija apstrādā video: ${data.pct || 0}%${stageInfo}...`;
+            } 
+            else if (data.state === "done") {
+                clearInterval(interval);
+                statusSpinner.style.display = "none";
+                statusText.innerHTML = `<span style="color: var(--success)">✓ Apstrāde pabeigta!</span><br>Tūlīt sāksies lejupielāde.`;
+                
+                // 🚨 SASKAŅOTS AR C++ LEJUPIELĀDI: /download?id=JOB_ID
+                window.location.href = `${API_BASE_URL}/download?id=${jobId}`;
+                document.getElementById('submitBtn').disabled = false;
+            } 
+            else if (data.state === "error") {
+                clearInterval(interval);
+                statusSpinner.style.display = "none";
+                statusText.innerText = `Apstrādes kļūda: ${data.error || 'C++ sistēmas kļūda.'}`;
+                document.getElementById('submitBtn').disabled = false;
             }
-        }, 3000);
-    }
-</script>
-
-</body>
-</html>
+        } catch (err) {
+            console.error("Kļūda pārbaudot statusu:", err);
+        }
+    }, 3000); // vaicājam ik pēc 3 sekundēm
+}
