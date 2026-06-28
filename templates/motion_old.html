@@ -159,115 +159,6 @@
         }
     }
 
-    // Augšupielāde ar pārtraukšanu, ja progress apstājas vai ir pārāk lēns
-    function uploadWithStallDetection(url, file, headers) {
-        return new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            const STALL_TIMEOUT_MS = 30000; // 30s bez progresa = apstājies
-            let lastProgressTime = Date.now();
-            let lastLoaded = 0;
-
-            const stallChecker = setInterval(() => {
-                if (Date.now() - lastProgressTime > STALL_TIMEOUT_MS) {
-                    clearInterval(stallChecker);
-                    xhr.abort();
-                }
-            }, 5000);
-
-            xhr.upload.addEventListener('progress', (event) => {
-                if (event.lengthComputable && event.loaded > lastLoaded) {
-                    lastProgressTime = Date.now();
-                    lastLoaded = event.loaded;
-                    const pct = Math.round((event.loaded / event.total) * 100);
-                    document.getElementById('statusText').innerText = `Augšupielādē video: ${pct}%`;
-                }
-            });
-
-            xhr.onload = () => {
-                clearInterval(stallChecker);
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    try { resolve(JSON.parse(xhr.responseText)); }
-                    catch (e) { reject(new Error("Servera atbilde nav derīgs JSON.")); }
-                } else {
-                    reject(new Error(`Servera kļūda: HTTP ${xhr.status}`));
-                }
-            };
-
-            xhr.onerror = () => {
-                clearInterval(stallChecker);
-                reject(new Error("Tīkla kļūda augšupielādes laikā."));
-            };
-            xhr.onabort = () => {
-                clearInterval(stallChecker);
-                reject(new Error(`Augšupielāde pārtraukta: datu pārraide apstājās uz vairāk nekā ${STALL_TIMEOUT_MS / 1000}s.`));
-            };
-
-            xhr.open('POST', url);
-            for (const [key, value] of Object.entries(headers)) {
-                xhr.setRequestHeader(key, value);
-            }
-            xhr.send(file);
-        });
-    }
-
-    // Lejupielāde ar progress procentiem un stall-detection aizsardzību
-    function downloadWithProgress(url, headers, filename) {
-        return new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            const STALL_TIMEOUT_MS = 30000;
-            let lastProgressTime = Date.now();
-            let lastLoaded = 0;
-
-            const stallChecker = setInterval(() => {
-                if (Date.now() - lastProgressTime > STALL_TIMEOUT_MS) {
-                    clearInterval(stallChecker);
-                    xhr.abort();
-                }
-            }, 5000);
-
-            xhr.addEventListener('progress', (event) => {
-                lastProgressTime = Date.now();
-                if (event.lengthComputable && event.loaded > lastLoaded) {
-                    lastLoaded = event.loaded;
-                    const pct = Math.round((event.loaded / event.total) * 100);
-                    document.getElementById('statusText').innerHTML =
-                        `<span style="color: var(--success)">✓ Apstrāde pabeigta!</span><br>Lejupielādē: ${pct}%`;
-                }
-            });
-
-            xhr.onload = () => {
-                clearInterval(stallChecker);
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    const blobUrl = window.URL.createObjectURL(xhr.response);
-                    const a = document.createElement('a');
-                    a.href = blobUrl;
-                    a.download = filename;
-                    a.click();
-                    window.URL.revokeObjectURL(blobUrl);
-                    resolve();
-                } else {
-                    reject(new Error(`Lejupielādes kļūda: HTTP ${xhr.status}`));
-                }
-            };
-
-            xhr.onerror = () => {
-                clearInterval(stallChecker);
-                reject(new Error("Tīkla kļūda lejupielādes laikā."));
-            };
-            xhr.onabort = () => {
-                clearInterval(stallChecker);
-                reject(new Error(`Lejupielāde pārtraukta: datu pārraide apstājās uz vairāk nekā ${STALL_TIMEOUT_MS / 1000}s.`));
-            };
-
-            xhr.responseType = 'blob';
-            xhr.open('GET', url);
-            for (const [key, value] of Object.entries(headers)) {
-                xhr.setRequestHeader(key, value);
-            }
-            xhr.send();
-        });
-    }
-
     async function startProcessing() {
         if (!selectedFile) return;
         console.log("log: function startProcessing() sāk darbu");
@@ -291,8 +182,16 @@
                 headers['X-API-Key'] = API_KEY;
             }
 
-            // SŪTĀM TĪRUS BAITUS ar stall-detection aizsardzību
-            const data = await uploadWithStallDetection(`${API_BASE_URL}/upload`, selectedFile, headers);
+            // SŪTĀM TĪRUS BAITUS, KĀ TO GAIDA JŪSU C++ KODS (req.body())
+            const response = await fetch(`${API_BASE_URL}/upload`, {
+                method: 'POST',
+                headers: headers,
+                body: selectedFile // Sūtām pašu failu tieši kā baitu plūsmu
+            });
+
+            if (!response.ok) throw new Error("Servera kļūda augšupielādējot.");
+
+            const data = await response.json();
             
             // Saskaņots ar Jūsu C++ handleUpload atbildi: "job_id"
             const jobId = data.job_id; 
@@ -346,21 +245,25 @@
                     clearInterval(interval);
                     statusSpinner.style.display = "none";
                     statusText.innerHTML = `<span style="color: var(--success)">✓ Apstrāde pabeigta!</span><br>Sākas lejupielāde.`;
-
+                    
+                    // Saskaņots ar Jūsu C++ handleDownload: /download?id=JOB_ID
                     const downloadUrl = `${API_BASE_URL}/download?id=${jobId}`;
-                    const dlHeaders = API_KEY !== "" ? { 'X-API-Key': API_KEY } : {};
-
-                    downloadWithProgress(downloadUrl, dlHeaders, "apstradats_video.mp4")
-                        .then(() => {
-                            statusText.innerHTML = `<span style="color: var(--success)">✓ Lejupielāde pabeigta!</span>`;
-                        })
-                        .catch(err => {
-                            console.error("log: Kļūda lejupielādējot:", err);
-                            statusText.innerText = `Kļūda: ${err.message}`;
-                        })
-                        .finally(() => {
-                            document.getElementById('submitBtn').disabled = false;
-                        });
+                    
+                    if (API_KEY !== "") {
+                        fetch(downloadUrl, { headers: { 'X-API-Key': API_KEY } })
+                            .then(res => res.blob())
+                            .then(blob => {
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = "apstradats_video.mp4";
+                                a.click();
+                            });
+                    } else {
+                        window.location.href = downloadUrl;
+                    }
+                    
+                    document.getElementById('submitBtn').disabled = false;
                 } 
                 else if (data.state === "error") {
                     clearInterval(interval);
