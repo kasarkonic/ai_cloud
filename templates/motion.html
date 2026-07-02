@@ -3,277 +3,555 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Apstrādes Portāls</title>
+    <title>CV2 · Video Motion Magnification</title>
     <style>
         :root {
-            --primary: #2563eb;
-            --success: #16a34a;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #1e293b;
+            --primary: #3b82f6;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --border: #334155;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
         }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg);
+            background: var(--bg);
             color: var(--text);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding: 18px 16px;
             min-height: 100vh;
-            box-sizing: border-box;
         }
-        .container {
+        .container { max-width: 780px; margin: 0 auto; }
+
+        /* Header */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 14px;
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+        }
+        .brand { display: flex; align-items: center; gap: 11px; }
+        .brand-icon { font-size: 26px; line-height: 1; }
+        .brand-title { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+        .brand-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+        .max-badge {
+            font-size: 11px;
+            background: rgba(245,158,11,0.12);
+            color: var(--warning);
+            border: 1px solid rgba(245,158,11,0.35);
+            border-radius: 6px;
+            padding: 4px 10px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        /* IP row */
+        .ip-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             background: var(--card);
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            width: 100%;
-            max-width: 450px;
-            text-align: center;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            padding: 8px 13px;
+            margin-bottom: 14px;
         }
-        h1 { font-size: 24px; margin-bottom: 8px; }
-        p { color: #64748b; font-size: 14px; margin-bottom: 24px; }
-        
-        /* Failu izvēles zona */
-        .upload-area {
-            display: block;
-            border: 2px dashed #cbd5e1;
-            border-radius: 12px;
-            padding: 40px 20px;
-            cursor: pointer;
-            transition: border-color 0.2s;
-            margin-bottom: 20px;
-        }
-        .upload-area:hover { border-color: var(--primary); }
-        .upload-icon { font-size: 40px; margin-bottom: 10px; }
-        
-        /* Slēptais oriģinālais input */
-        #videoInput { display: none; }
-        
-        /* Pogas */
-        button {
-            background-color: var(--primary);
-            color: white;
+        .ip-row label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+        .ip-row input {
+            flex: 1;
+            background: transparent;
             border: none;
-            padding: 12px 24px;
-            font-size: 16px;
+            outline: none;
+            color: var(--text);
+            font-size: 13px;
+            font-family: monospace;
+        }
+
+        /* Media panel */
+        .media-panel {
+            position: relative;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 16 / 9;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            margin-bottom: 14px;
+        }
+        #previewVideo {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        .drop-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #08172b;
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            gap: 10px;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .drop-overlay.drag-over {
+            border-color: var(--primary);
+            background: rgba(59,130,246,0.07);
+        }
+        .drop-overlay.has-file { border-color: var(--success); border-style: solid; }
+        .drop-overlay.hidden { display: none; }
+        .drop-icon { font-size: 40px; }
+        .drop-hint { font-size: 13px; color: var(--muted); text-align: center; line-height: 1.6; }
+        .drop-hint strong { color: var(--text); }
+        .warn-badge {
+            font-size: 11px;
+            background: rgba(245,158,11,0.15);
+            color: var(--warning);
+            border: 1px solid rgba(245,158,11,0.4);
+            border-radius: 6px;
+            padding: 3px 9px;
+        }
+        #videoInput { display: none; }
+
+        /* Metadata cards */
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .meta-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 9px 12px;
+        }
+        .meta-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+        .meta-value { font-size: 14px; font-weight: 700; font-family: monospace; }
+
+        /* Progress */
+        .progress-wrap { margin-bottom: 14px; }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+        .progress-bg {
+            background: #1a2e4a;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            height: 11px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #60a5fa);
+            border-radius: 999px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Button */
+        .btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 13px 24px;
+            font-size: 15px;
             font-weight: 600;
-            border-radius: 8px;
+            border-radius: 10px;
             width: 100%;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: background 0.2s, opacity 0.2s;
+            margin-bottom: 14px;
         }
-        button:disabled { background-color: #94a3b8; cursor: not-allowed; }
-        
-        /* Statusa un progresa sekcija */
-        .status-container {
+        .btn:hover:not(:disabled) { background: #2563eb; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* Status */
+        .status-box {
             display: none;
-            margin-top: 24px;
-            padding: 16px;
-            border-radius: 8px;
-            background-color: #f1f5f9;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            gap: 10px;
+            align-items: center;
+            font-size: 14px;
         }
+        .status-box.visible { display: flex; }
         .spinner {
-            border: 3px solid #cbd5e1;
-            border-top: 3px solid var(--primary);
+            flex-shrink: 0;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 12px auto;
+            width: 17px; height: 17px;
+            animation: spin 0.8s linear infinite;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        #statusText { font-weight: 600; font-size: 14px; }
-        #fileInfo { font-size: 12px; color: #64748b; margin-top: 4px; }
+        .spinner.hidden { visibility: hidden; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-
 <div class="container">
-    <h1>Video Apstrāde</h1>
-    <p>Nofilmējiet vai izvēlieties video failu apstrādei ar GPU</p>
 
-    <!-- Piesaistīts 'for="videoInput"', lai Android ierīces dabiski atvērtu failu pārlūku -->
-    <label for="videoInput" class="upload-area">
-        <div class="upload-icon">🎥</div>
-        <div id="uploadLabel">Spiediet, lai uzņemtu vai izvēlētos video</div>
-        <div id="uploadLabel">Tiks apstrādātas pirmās 10s</div>
-        <div id="fileInfo"></div>
-    </label>
+    <header>
+        <div class="brand">
+            <span class="brand-icon">&#x1F52C;</span>
+            <div>
+                <div class="brand-title">CV2 &middot; Video Motion Magnification</div>
+                <div class="brand-sub">Eulerian magnification &mdash; GPU accelerated server-side processing</div>
+            </div>
+        </div>
+        <div class="max-badge">&#x26A0;&#xFE0F; Maks. 10s video</div>
+    </header>
 
-    <!-- Bez capture="environment" atribūta Android korekti piedāvās izvēli starp kameru un galeriju -->
-    <input type="file" id="videoInput" accept="video/*" maxduration="10" onchange="fileSelected()">
-
-    <button id="submitBtn" onclick="startProcessing()" disabled>Sākt apstrādi</button>
-
-    <!-- Slēptais statusa logs, kas parādās procesa laikā -->
-    <div class="status-container" id="statusContainer">
-        <div class="spinner" id="statusSpinner"></div>
-        <div id="statusText">Gatavojas augšupielādei...</div>
+    <div class="ip-row">
+        <label>&#x1F310; M&#x0113;r&#x0137;a adrese:</label>
+        <input type="text" id="targetUrl" value="https://www.kasarko.lv:8765" placeholder="http://192.168.1.x:8765">
     </div>
+
+    <div class="media-panel" id="mediaPanel">
+        <video id="previewVideo" muted playsinline></video>
+        <div class="drop-overlay" id="dropOverlay">
+            <div class="drop-icon">&#x1F3A5;</div>
+            <div class="drop-hint" id="dropHint">
+                <strong>Ievelciet video &#x0161;eit</strong><br>
+                vai spiediet, lai izv&#x0113;l&#x0113;tos failu
+            </div>
+        </div>
+        <input type="file" id="videoInput" accept="video/*">
+    </div>
+
+    <div class="meta-grid">
+        <div class="meta-item"><div class="meta-label">Izm&#x0113;rs</div>      <div class="meta-value" id="mSize">&mdash;</div></div>
+        <div class="meta-item"><div class="meta-label">Garums</div>      <div class="meta-value" id="mDuration">&mdash;</div></div>
+        <div class="meta-item"><div class="meta-label">Iz&#x0161;&#x0137;irtsp&#x0113;ja</div><div class="meta-value" id="mRes">&mdash;</div></div>
+        <div class="meta-item"><div class="meta-label">Bitu &#x0101;trums</div> <div class="meta-value" id="mBitrate">&mdash;</div></div>
+        <div class="meta-item"><div class="meta-label">FPS</div>         <div class="meta-value" id="mFps">&mdash;</div></div>
+        <div class="meta-item"><div class="meta-label">Konteiners</div>  <div class="meta-value" id="mType">&mdash;</div></div>
+    </div>
+
+    <div class="progress-wrap">
+        <div class="progress-header">
+            <span id="progressLabel">Gatavs nos&#x016B;t&#x012B;&#x0161;anai</span>
+            <span id="progressPct">&mdash;</span>
+        </div>
+        <div class="progress-bg">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </div>
+
+    <button class="btn" id="submitBtn" onclick="startUpload()" disabled>
+        &#x1F4E4; Nos&#x016B;t&#x012B;t video uz serveri
+    </button>
+
+    <div class="status-box" id="statusBox">
+        <div class="spinner" id="statusSpinner"></div>
+        <div id="statusText">Gatavojas...</div>
+    </div>
+
 </div>
- 
 <script>
-    // 🚨 JŪSU DROŠĀ UN PĀRBAUDĪTĀ ADRESE (Bez liekas slīpsvītras beigās)
-    const API_BASE_URL = "https://www.kasarko.lv:8765";   
-    
-    // Ja Jūsu C++ kodā apiKey_ ir tukšs, atstājiet ""
-    const API_KEY = ""; 
-
+    const API_KEY = "";
+    const MAX_DURATION = 10;
     let selectedFile = null;
+    let objectUrl = null;
 
-    // 🛠️ SALABOTA UN PRECIZĒTA FUNKCIJA (Paņem pirmo failu)
-    function fileSelected() {
-        console.log("log: function fileSelected() izsaukta");
-        const input = document.getElementById('videoInput');
-        
-        if (input.files.length > 0) {
-            selectedFile = input.files[0]; // 🚨 Paņemam pirmo failu, lai strādātu .size un .name
-            const sizeInMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
-            
-            // Pārbaudām video garumu pirms sūtīšanas
-            const videoElement = document.createElement('video');
-            videoElement.preload = 'metadata';
-            videoElement.src = URL.createObjectURL(selectedFile);
-            
-            videoElement.onloadedmetadata = function() {
-                URL.revokeObjectURL(videoElement.src);
-                const duration = videoElement.duration;
-                
-                document.getElementById('uploadLabel').innerText = "Video izvēlēts!";
-                
-                // Ja video ir garāks par 10s, brīdinām (C++ handleUpload to apgriezīs pats fonā)
-                if (duration > 10.5) {
-                    document.getElementById('fileInfo').innerHTML = 
-                        `${selectedFile.name} (${sizeInMB} MB)<br>` +
-                        `<span style="color: #eab308; font-weight: bold;">⚠️ Uzmanību: Video ir ${duration.toFixed(1)}s garš. Tiks apstrādātas tikai pirmās 10 sekundes!</span>`;
-                } else {
-                    document.getElementById('fileInfo').innerText = `${selectedFile.name} (${sizeInMB} MB) - Garums: ${duration.toFixed(1)}s`;
-                }
-                
+    const mediaPanel  = document.getElementById('mediaPanel');
+    const dropOverlay = document.getElementById('dropOverlay');
+    const videoInput  = document.getElementById('videoInput');
+
+    dropOverlay.addEventListener('click', () => videoInput.click());
+    videoInput.addEventListener('change', () => {
+        if (videoInput.files.length > 0) handleFile(videoInput.files[0]);
+    });
+    mediaPanel.addEventListener('dragover', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        dropOverlay.classList.add('drag-over');
+    });
+    mediaPanel.addEventListener('dragleave', (e) => {
+        if (!mediaPanel.contains(e.relatedTarget)) dropOverlay.classList.remove('drag-over');
+    });
+    mediaPanel.addEventListener('drop', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        dropOverlay.classList.remove('drag-over');
+        const f = e.dataTransfer.files[0];
+        if (f && f.type.startsWith('video/')) handleFile(f);
+        else if (f) alert('Ludzu izveleties video failu!');
+    });
+
+    function handleFile(file) {
+        selectedFile = file;
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        objectUrl = URL.createObjectURL(file);
+
+        const kb = file.size / 1024, mb = kb / 1024;
+        document.getElementById('mSize').textContent =
+            mb >= 1 ? mb.toFixed(2) + ' MB' : kb.toFixed(0) + ' KB';
+        const ext  = file.name.split('.').pop().toUpperCase();
+        const mime = file.type.replace('video/', '').toUpperCase();
+        document.getElementById('mType').textContent = mime || ext || '\u2014';
+
+        document.getElementById('submitBtn').disabled = true;
+        document.getElementById('statusBox').classList.remove('visible');
+        document.getElementById('progressFill').style.width = '0%';
+        document.getElementById('progressPct').textContent = '\u2014';
+        document.getElementById('progressLabel').textContent = 'Iel\u0101d\u0113 metadatus\u2026';
+        ['mDuration','mRes','mBitrate','mFps'].forEach(id =>
+            document.getElementById(id).textContent = '\u2014');
+
+        const video = document.getElementById('previewVideo');
+        video.src = objectUrl;
+        video.load();
+
+        video.onloadedmetadata = () => {
+            const dur = video.duration;
+            const sendDur = isFinite(dur) ? Math.min(dur, MAX_DURATION) : MAX_DURATION;
+
+            document.getElementById('mDuration').textContent =
+                isFinite(dur) ? dur.toFixed(1) + ' s' : '\u2014';
+            document.getElementById('mRes').textContent =
+                video.videoWidth + '\u00d7' + video.videoHeight;
+            if (isFinite(dur) && dur > 0) {
+                const sendBytes = dur > MAX_DURATION
+                    ? Math.round(file.size * (MAX_DURATION / dur)) : file.size;
+                const kbps = ((sendBytes * 8) / sendDur / 1000).toFixed(0);
+                document.getElementById('mBitrate').textContent = kbps + ' kbps';
+            }
+
+            if (isFinite(dur) && dur > MAX_DURATION) {
+                document.getElementById('dropHint').innerHTML =
+                    '<div style="font-size:13px;font-weight:600;color:var(--success);word-break:break-all;padding:0 16px">\u2705 ' + file.name + '</div>' +
+                    '<div class="warn-badge">\u26a0\ufe0f ' + dur.toFixed(1) + 's \u2014 nos\u016bt\u012bs ' + MAX_DURATION + 's</div>' +
+                    '<div style="font-size:11px;color:var(--muted);margin-top:4px">Spiediet, lai main\u012btu</div>';
+            } else {
+                document.getElementById('dropHint').innerHTML =
+                    '<div style="font-size:13px;font-weight:600;color:var(--success);word-break:break-all;padding:0 16px">\u2705 ' + file.name + '</div>' +
+                    '<div style="font-size:11px;color:var(--muted);margin-top:4px">Spiediet, lai main\u012btu</div>';
+            }
+            dropOverlay.classList.add('has-file');
+            dropOverlay.classList.add('hidden');
+
+            document.getElementById('mFps').textContent = '\u2026';
+            detectFps(video).then(fps => {
+                document.getElementById('mFps').textContent = fps != null ? fps + ' fps' : 'N/A';
+                video.pause();
+                video.currentTime = 0;
+                document.getElementById('progressLabel').textContent = 'Gatavs nos\u016bt\u012b\u0161anai';
                 document.getElementById('submitBtn').disabled = false;
-            };
-        }
+            });
+        };
+
+        video.onerror = () => {
+            document.getElementById('progressLabel').textContent = 'K\u013c\u016bda lasot failu';
+            document.getElementById('submitBtn').disabled = false;
+        };
     }
 
-    async function startProcessing() {
-        if (!selectedFile) return;
-        console.log("log: function startProcessing() sāk darbu");
+    function detectFps(video) {
+        return new Promise(resolve => {
+            if (typeof video.requestVideoFrameCallback !== 'function') { resolve(null); return; }
+            let count = 0, startTime = null;
+            function onFrame(now) {
+                if (startTime === null) startTime = now;
+                count++;
+                const elapsed = (now - startTime) / 1000;
+                if (count < 40 && elapsed < 2.0 && !video.paused)
+                    video.requestVideoFrameCallback(onFrame);
+                else
+                    resolve(elapsed > 0.1 ? Math.round(count / elapsed) : null);
+            }
+            video.muted = true;
+            video.currentTime = 0;
+            video.play().then(() => video.requestVideoFrameCallback(onFrame)).catch(() => resolve(null));
+        });
+    }
 
-        const submitBtn = document.getElementById('submitBtn');
-        const statusContainer = document.getElementById('statusContainer');
+    function setProgress(pct, sentSec, totalSec) {
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('progressPct').textContent = pct + '%';
+        if (sentSec !== undefined && totalSec !== undefined)
+            document.getElementById('progressLabel').textContent =
+                sentSec.toFixed(1) + 's  /  ' + totalSec.toFixed(1) + 's';
+    }
+
+    function startUpload() {
+        if (!selectedFile) return;
+        const baseUrl = document.getElementById('targetUrl').value.trim().replace(/\/$/, '');
+        if (!baseUrl) { alert('Ludzu ievadiet merksa adresi!'); return; }
+
+        const submitBtn  = document.getElementById('submitBtn');
+        const statusBox  = document.getElementById('statusBox');
         const statusText = document.getElementById('statusText');
-        const statusSpinner = document.getElementById('statusSpinner');
 
         submitBtn.disabled = true;
-        statusContainer.style.display = "block";
-        statusText.innerText = "Augšupielādē video uz serveri...";
+        statusBox.classList.add('visible');
+        statusText.textContent = 'Aug\u0161upiel\u0101d\u0113 video uz serveri...';
+        document.getElementById('statusSpinner').classList.remove('hidden');
 
-        try {
-            // Gatavojam galvenes Jūsu C++ handleUpload funkcijai
-            const headers = {
-                'Content-Type': 'application/octet-stream',
-                'X-Filename': selectedFile.name
-            };
-            if (API_KEY !== "") {
-                headers['X-API-Key'] = API_KEY;
-            }
+        const video      = document.getElementById('previewVideo');
+        const videoDur   = isFinite(video.duration) ? video.duration : MAX_DURATION;
+        const sendDuration = Math.min(videoDur, MAX_DURATION);
+        const sendBytes  = sendDuration >= videoDur
+            ? selectedFile.size
+            : Math.round(selectedFile.size * (sendDuration / videoDur));
+        const sendBlob   = selectedFile.slice(0, sendBytes);
 
-            // SŪTĀM TĪRUS BAITUS, KĀ TO GAIDA JŪSU C++ KODS (req.body())
-            const response = await fetch(`${API_BASE_URL}/upload`, {
-                method: 'POST',
-                headers: headers,
-                body: selectedFile // Sūtām pašu failu tieši kā baitu plūsmu
+        setProgress(0, 0, sendDuration);
+        document.getElementById('progressLabel').textContent = 'Aug\u0161upiel\u0101d\u0113...';
+        video.pause();
+        video.currentTime = 0;
+
+        uploadWithProgress(baseUrl, sendBlob, sendDuration)
+            .then(data => {
+                setProgress(100, sendDuration, sendDuration);
+                const jobId = data && data.job_id;
+                if (jobId) {
+                    statusText.textContent = 'Video sa\u0146emts. Gaida rind\u0101...';
+                    checkStatus(baseUrl, jobId);
+                } else {
+                    document.getElementById('statusSpinner').classList.add('hidden');
+                    statusText.innerHTML = '<span style="color:var(--success)">\u2705 Nos\u016bt\u012bts veiksmīgi!</span>';
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(err => {
+                document.getElementById('statusSpinner').classList.add('hidden');
+                statusText.innerHTML = '<span style="color:var(--danger)">\u274c K\u013c\u016bda: ' + err.message + '</span>';
+                document.getElementById('progressLabel').textContent = 'Neizdev\u0101s nos\u016bt\u012bt';
+                submitBtn.disabled = false;
             });
-
-            if (!response.ok) throw new Error("Servera kļūda augšupielādējot.");
-
-            const data = await response.json();
-            
-            // Saskaņots ar Jūsu C++ handleUpload atbildi: "job_id"
-            const jobId = data.job_id; 
-            console.log("log: Augšupielāde veiksmīga. Piešķirts job_id:", jobId);
-
-            statusText.innerText = "Video saņemts. Gaida rindā uz GPU...";
-            
-            // Palaižam statusa pārbaudi
-            checkStatus(jobId);
-
-        } catch (error) {
-            console.error("log: Kļūda startProcessing posmā:", error);
-            statusSpinner.style.display = "none";
-            statusText.innerText = "Kļūda: Neizdevās nosūtīt failu.";
-            submitBtn.disabled = false;
-        }
     }
 
-    function checkStatus(jobId) {
-        const statusText = document.getElementById('statusText');
-        const statusSpinner = document.getElementById('statusSpinner');
+    function uploadWithProgress(baseUrl, blob, sendDuration) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            const STALL_MS = 30000;
+            let lastProgressAt = Date.now(), lastSeekAt = 0;
+            const stallCheck = setInterval(() => {
+                if (Date.now() - lastProgressAt > STALL_MS) { clearInterval(stallCheck); xhr.abort(); }
+            }, 5000);
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    lastProgressAt = Date.now();
+                    const ratio = e.loaded / e.total;
+                    const pct = Math.round(ratio * 100);
+                    const sentSec = ratio * sendDuration;
+                    setProgress(pct, sentSec, sendDuration);
+                    document.getElementById('statusText').textContent =
+                        'Aug\u0161upiel\u0101d\u0113: ' + pct + '%  (' + sentSec.toFixed(1) + 's / ' + sendDuration.toFixed(1) + 's)';
+                    const now = Date.now();
+                    if (now - lastSeekAt > 200) {
+                        lastSeekAt = now;
+                        document.getElementById('previewVideo').currentTime = sentSec;
+                    }
+                }
+            });
+            xhr.onload = () => {
+                clearInterval(stallCheck);
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    let data = {}; try { data = JSON.parse(xhr.responseText); } catch (_) {}
+                    resolve(data);
+                } else reject(new Error('Servera k\u013c\u016bda: HTTP ' + xhr.status));
+            };
+            xhr.onerror = () => { clearInterval(stallCheck); reject(new Error('T\u012bkla k\u013c\u016bda. P\u0101rbaudiet savienojumu.')); };
+            xhr.onabort = () => { clearInterval(stallCheck); reject(new Error('Aug\u0161upiel\u0101de apst\u0101j\u0101s (>' + (STALL_MS/1000) + 's bez progresa)')); };
+            xhr.open('POST', baseUrl + '/upload');
+            xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+            xhr.setRequestHeader('X-Filename', encodeURIComponent(selectedFile.name));
+            if (API_KEY) xhr.setRequestHeader('X-API-Key', API_KEY);
+            xhr.send(blob);
+        });
+    }
 
+    function checkStatus(baseUrl, jobId) {
+        const statusText = document.getElementById('statusText');
         const interval = setInterval(async () => {
             try {
-                const headers = {};
-                if (API_KEY !== "") {
-                    headers['X-API-Key'] = API_KEY;
-                }
-
-                // Saskaņots ar Jūsu C++ handleStatus: /status?id=JOB_ID
-                const response = await fetch(`${API_BASE_URL}/status?id=${jobId}`, {
-                    method: 'GET',
-                    headers: headers
-                });
-                if (!response.ok) return;
-
-                const data = await response.json();
-                console.log("log: Saņemtie dati no C++ servera:", data);
-                console.log("log: Pašreizējais stāvoklis (state):", data.state);
-
-                // Saskaņots ar Jūsu C++ stāvokļu sistēmu ("queued", "processing", "done", "error")
-                if (data.state === "queued") {
-                    statusText.innerText = `Uzdevums gaida rindā. Pozīcija: ${data.position}`;
-                }
-                else if (data.state === "processing") {
-                    // Izmantojam Jūsu C++ atgrieztos procentus ("pct") un posmu ("stage")
-                    const stageInfo = data.stage ? ` [${data.stage}]` : "";
-                    statusText.innerText = `Qt aplikācija apstrādā video: ${data.pct || 0}%${stageInfo}...`;
-                } 
-                else if (data.state === "done") {
+                const h = API_KEY ? { 'X-API-Key': API_KEY } : {};
+                const res = await fetch(baseUrl + '/status?id=' + encodeURIComponent(jobId), { method: 'GET', headers: h });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.state === 'queued') {
+                    statusText.textContent = 'Gaida rind\u0101. Poz\u012bcija: ' + (data.position != null ? data.position : '?');
+                } else if (data.state === 'processing') {
+                    const pct = data.pct || 0, stage = data.stage ? ' [' + data.stage + ']' : '';
+                    document.getElementById('progressFill').style.width = pct + '%';
+                    document.getElementById('progressPct').textContent = pct + '%';
+                    document.getElementById('progressLabel').textContent = 'Apstr\u0101d\u0101' + stage + '...';
+                    statusText.textContent = 'Apstr\u0101d\u0101 video: ' + pct + '%' + stage;
+                } else if (data.state === 'done') {
                     clearInterval(interval);
-                    statusSpinner.style.display = "none";
-                    statusText.innerHTML = `<span style="color: var(--success)">✓ Apstrāde pabeigta!</span><br>Sākas lejupielāde.`;
-                    
-                    // Saskaņots ar Jūsu C++ handleDownload: /download?id=JOB_ID
-                    const downloadUrl = `${API_BASE_URL}/download?id=${jobId}`;
-                    
-                    if (API_KEY !== "") {
-                        fetch(downloadUrl, { headers: { 'X-API-Key': API_KEY } })
-                            .then(res => res.blob())
-                            .then(blob => {
-                                const url = window.URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = "apstradats_video.mp4";
-                                a.click();
-                            });
-                    } else {
-                        window.location.href = downloadUrl;
-                    }
-                    
-                    document.getElementById('submitBtn').disabled = false;
-                } 
-                else if (data.state === "error") {
+                    document.getElementById('previewVideo').pause();
+                    document.getElementById('statusSpinner').classList.add('hidden');
+                    statusText.innerHTML = '<span style="color:var(--success)">\u2705 Apstr\u0101de pabeigta! S\u0101kas lejupiel\u0101de...</span>';
+                    downloadResult(baseUrl, jobId);
+                } else if (data.state === 'error') {
                     clearInterval(interval);
-                    statusSpinner.style.display = "none";
-                    statusText.innerText = `Apstrādes kļūda: ${data.error || 'C++ sistēmas kļūda.'}`;
+                    document.getElementById('previewVideo').pause();
+                    document.getElementById('statusSpinner').classList.add('hidden');
+                    statusText.innerHTML = '<span style="color:var(--danger)">\u274c K\u013c\u016bda: ' + (data.error || 'Nez\u012bn\u0101ma k\u013c\u016bda') + '</span>';
                     document.getElementById('submitBtn').disabled = false;
                 }
-            } catch (err) {
-                console.error("log: Kļūda pārbaudot statusu:", err);
+            } catch (_) {}
+        }, 3000);
+    }
+
+    function downloadResult(baseUrl, jobId) {
+        const statusText = document.getElementById('statusText');
+        const xhr = new XMLHttpRequest();
+        xhr.responseType = 'blob';
+        xhr.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+                const pct = Math.round((e.loaded / e.total) * 100);
+                document.getElementById('progressFill').style.width = pct + '%';
+                document.getElementById('progressPct').textContent = pct + '%';
+                document.getElementById('progressLabel').textContent = 'Lejupiel\u0101d\u0113...';
             }
-        }, 3000); // Vaicājam ik pēc 3 sekundēm.
+        });
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                const url = URL.createObjectURL(xhr.response);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'apstradats_video.mp4';
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                document.getElementById('progressLabel').textContent = 'Lejupiel\u0101d\u0113ts!';
+                document.getElementById('progressPct').textContent = '100%';
+                statusText.innerHTML = '<span style="color:var(--success)">\u2705 Lejupiel\u0101de pabeigta!</span>';
+            } else {
+                statusText.innerHTML = '<span style="color:var(--danger)">\u274c Lejupiel\u0101des k\u013c\u016bda: HTTP ' + xhr.status + '</span>';
+            }
+            document.getElementById('submitBtn').disabled = false;
+        };
+        xhr.onerror = () => {
+            statusText.innerHTML = '<span style="color:var(--danger)">\u274c T\u012bkla k\u013c\u016bda lejupiel\u0101des laik\u0101</span>';
+            document.getElementById('submitBtn').disabled = false;
+        };
+        xhr.open('GET', baseUrl + '/download?id=' + encodeURIComponent(jobId));
+        if (API_KEY) xhr.setRequestHeader('X-API-Key', API_KEY);
+        xhr.send();
     }
 </script>
+</body>
+</html>
