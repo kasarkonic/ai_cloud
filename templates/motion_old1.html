@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Apstrādes Portāls</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #16a34a;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .container {
+            background: var(--card);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        h1 { font-size: 24px; margin-bottom: 8px; }
+        p { color: #64748b; font-size: 14px; margin-bottom: 24px; }
+        
+        /* Failu izvēles zona */
+        .upload-area {
+            display: block;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 40px 20px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            margin-bottom: 20px;
+        }
+        .upload-area:hover { border-color: var(--primary); }
+        .upload-icon { font-size: 40px; margin-bottom: 10px; }
+        
+        /* Slēptais oriģinālais input */
+        #videoInput { display: none; }
+        
+        /* Pogas */
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        
+        /* Statusa un progresa sekcija */
+        .status-container {
+            display: none;
+            margin-top: 24px;
+            padding: 16px;
+            border-radius: 8px;
+            background-color: #f1f5f9;
+        }
+        .spinner {
+            border: 3px solid #cbd5e1;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        #statusText { font-weight: 600; font-size: 14px; }
+        #fileInfo { font-size: 12px; color: #64748b; margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Video Apstrāde</h1>
+    <p>Nofilmējiet vai izvēlieties video failu apstrādei ar GPU</p>
+
+    <!-- Piesaistīts 'for="videoInput"', lai Android ierīces dabiski atvērtu failu pārlūku -->
+    <label for="videoInput" class="upload-area">
+        <div class="upload-icon">🎥</div>
+        <div id="uploadLabel">Spiediet, lai uzņemtu vai izvēlētos video</div>
+        <div id="uploadLabel">Tiks apstrādātas pirmās 10s</div>
+        <div id="fileInfo"></div>
+    </label>
+
+    <!-- Bez capture="environment" atribūta Android korekti piedāvās izvēli starp kameru un galeriju -->
+    <input type="file" id="videoInput" accept="video/*" maxduration="10" onchange="fileSelected()">
+
+    <button id="submitBtn" onclick="startProcessing()" disabled>Sākt apstrādi</button>
+
+    <!-- Slēptais statusa logs, kas parādās procesa laikā -->
+    <div class="status-container" id="statusContainer">
+        <div class="spinner" id="statusSpinner"></div>
+        <div id="statusText">Gatavojas augšupielādei...</div>
+    </div>
+</div>
+ 
+<script>
+    // 🚨 JŪSU DROŠĀ UN PĀRBAUDĪTĀ ADRESE (Bez liekas slīpsvītras beigās)
+    const API_BASE_URL = "https://www.kasarko.lv:8765";   
+    
+    // Ja Jūsu C++ kodā apiKey_ ir tukšs, atstājiet ""
+    const API_KEY = ""; 
+
+    let selectedFile = null;
+
+    // 🛠️ SALABOTA UN PRECIZĒTA FUNKCIJA (Paņem pirmo failu)
+    function fileSelected() {
+        console.log("log: function fileSelected() izsaukta");
+        const input = document.getElementById('videoInput');
+        
+        if (input.files.length > 0) {
+            selectedFile = input.files[0]; // 🚨 Paņemam pirmo failu, lai strādātu .size un .name
+            const sizeInMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
+            
+            // Pārbaudām video garumu pirms sūtīšanas
+            const videoElement = document.createElement('video');
+            videoElement.preload = 'metadata';
+            videoElement.src = URL.createObjectURL(selectedFile);
+            
+            videoElement.onloadedmetadata = function() {
+                URL.revokeObjectURL(videoElement.src);
+                const duration = videoElement.duration;
+                
+                document.getElementById('uploadLabel').innerText = "Video izvēlēts!";
+                
+                // Ja video ir garāks par 10s, brīdinām (C++ handleUpload to apgriezīs pats fonā)
+                if (duration > 10.5) {
+                    document.getElementById('fileInfo').innerHTML = 
+                        `${selectedFile.name} (${sizeInMB} MB)<br>` +
+                        `<span style="color: #eab308; font-weight: bold;">⚠️ Uzmanību: Video ir ${duration.toFixed(1)}s garš. Tiks apstrādātas tikai pirmās 10 sekundes!</span>`;
+                } else {
+                    document.getElementById('fileInfo').innerText = `${selectedFile.name} (${sizeInMB} MB) - Garums: ${duration.toFixed(1)}s`;
+                }
+                
+                document.getElementById('submitBtn').disabled = false;
+            };
+        }
+    }
+
+    // Augšupielāde ar pārtraukšanu, ja progress apstājas vai ir pārāk lēns
+    function uploadWithStallDetection(url, file, headers) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            const STALL_TIMEOUT_MS = 30000; // 30s bez progresa = apstājies
+            let lastProgressTime = Date.now();
+            let lastLoaded = 0;
+
+            const stallChecker = setInterval(() => {
+                if (Date.now() - lastProgressTime > STALL_TIMEOUT_MS) {
+                    clearInterval(stallChecker);
+                    xhr.abort();
+                }
+            }, 5000);
+
+            xhr.upload.addEventListener('progress', (event) => {
+                if (event.lengthComputable && event.loaded > lastLoaded) {
+                    lastProgressTime = Date.now();
+                    lastLoaded = event.loaded;
+                    const pct = Math.round((event.loaded / event.total) * 100);
+                    document.getElementById('statusText').innerText = `Augšupielādē video: ${pct}%`;
+                }
+            });
+
+            xhr.onload = () => {
+                clearInterval(stallChecker);
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try { resolve(JSON.parse(xhr.responseText)); }
+                    catch (e) { reject(new Error("Servera atbilde nav derīgs JSON.")); }
+                } else {
+                    reject(new Error(`Servera kļūda: HTTP ${xhr.status}`));
+                }
+            };
+
+            xhr.onerror = () => {
+                clearInterval(stallChecker);
+                reject(new Error("Tīkla kļūda augšupielādes laikā."));
+            };
+            xhr.onabort = () => {
+                clearInterval(stallChecker);
+                reject(new Error(`Augšupielāde pārtraukta: datu pārraide apstājās uz vairāk nekā ${STALL_TIMEOUT_MS / 1000}s.`));
+            };
+
+            xhr.open('POST', url);
+            for (const [key, value] of Object.entries(headers)) {
+                xhr.setRequestHeader(key, value);
+            }
+            xhr.send(file);
+        });
+    }
+
+    // Lejupielāde ar progress procentiem un stall-detection aizsardzību
+    function downloadWithProgress(url, headers, filename) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            const STALL_TIMEOUT_MS = 30000;
+            let lastProgressTime = Date.now();
+            let lastLoaded = 0;
+
+            const stallChecker = setInterval(() => {
+                if (Date.now() - lastProgressTime > STALL_TIMEOUT_MS) {
+                    clearInterval(stallChecker);
+                    xhr.abort();
+                }
+            }, 5000);
+
+            xhr.addEventListener('progress', (event) => {
+                lastProgressTime = Date.now();
+                if (event.lengthComputable && event.loaded > lastLoaded) {
+                    lastLoaded = event.loaded;
+                    const pct = Math.round((event.loaded / event.total) * 100);
+                    document.getElementById('statusText').innerHTML =
+                        `<span style="color: var(--success)">✓ Apstrāde pabeigta!</span><br>Lejupielādē: ${pct}%`;
+                }
+            });
+
+            xhr.onload = () => {
+                clearInterval(stallChecker);
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const blobUrl = window.URL.createObjectURL(xhr.response);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = filename;
+                    a.click();
+                    window.URL.revokeObjectURL(blobUrl);
+                    resolve();
+                } else {
+                    reject(new Error(`Lejupielādes kļūda: HTTP ${xhr.status}`));
+                }
+            };
+
+            xhr.onerror = () => {
+                clearInterval(stallChecker);
+                reject(new Error("Tīkla kļūda lejupielādes laikā."));
+            };
+            xhr.onabort = () => {
+                clearInterval(stallChecker);
+                reject(new Error(`Lejupielāde pārtraukta: datu pārraide apstājās uz vairāk nekā ${STALL_TIMEOUT_MS / 1000}s.`));
+            };
+
+            xhr.responseType = 'blob';
+            xhr.open('GET', url);
+            for (const [key, value] of Object.entries(headers)) {
+                xhr.setRequestHeader(key, value);
+            }
+            xhr.send();
+        });
+    }
+
+    async function startProcessing() {
+        if (!selectedFile) return;
+        console.log("log: function startProcessing() sāk darbu");
+
+        const submitBtn = document.getElementById('submitBtn');
+        const statusContainer = document.getElementById('statusContainer');
+        const statusText = document.getElementById('statusText');
+        const statusSpinner = document.getElementById('statusSpinner');
+
+        submitBtn.disabled = true;
+        statusContainer.style.display = "block";
+        statusText.innerText = "Augšupielādē video uz serveri...";
+
+        try {
+            // Gatavojam galvenes Jūsu C++ handleUpload funkcijai
+            const headers = {
+                'Content-Type': 'application/octet-stream',
+                'X-Filename': selectedFile.name
+            };
+            if (API_KEY !== "") {
+                headers['X-API-Key'] = API_KEY;
+            }
+
+            // SŪTĀM TĪRUS BAITUS ar stall-detection aizsardzību
+            const data = await uploadWithStallDetection(`${API_BASE_URL}/upload`, selectedFile, headers);
+            
+            // Saskaņots ar Jūsu C++ handleUpload atbildi: "job_id"
+            const jobId = data.job_id; 
+            console.log("log: Augšupielāde veiksmīga. Piešķirts job_id:", jobId);
+
+            statusText.innerText = "Video saņemts. Gaida rindā uz GPU...";
+            
+            // Palaižam statusa pārbaudi
+            checkStatus(jobId);
+
+        } catch (error) {
+            console.error("log: Kļūda startProcessing posmā:", error);
+            statusSpinner.style.display = "none";
+            statusText.innerText = "Kļūda: Neizdevās nosūtīt failu.";
+            submitBtn.disabled = false;
+        }
+    }
+
+    function checkStatus(jobId) {
+        const statusText = document.getElementById('statusText');
+        const statusSpinner = document.getElementById('statusSpinner');
+
+        const interval = setInterval(async () => {
+            try {
+                const headers = {};
+                if (API_KEY !== "") {
+                    headers['X-API-Key'] = API_KEY;
+                }
+
+                // Saskaņots ar Jūsu C++ handleStatus: /status?id=JOB_ID
+                const response = await fetch(`${API_BASE_URL}/status?id=${jobId}`, {
+                    method: 'GET',
+                    headers: headers
+                });
+                if (!response.ok) return;
+
+                const data = await response.json();
+                console.log("log: Saņemtie dati no C++ servera:", data);
+                console.log("log: Pašreizējais stāvoklis (state):", data.state);
+
+                // Saskaņots ar Jūsu C++ stāvokļu sistēmu ("queued", "processing", "done", "error")
+                if (data.state === "queued") {
+                    statusText.innerText = `Uzdevums gaida rindā. Pozīcija: ${data.position}`;
+                }
+                else if (data.state === "processing") {
+                    // Izmantojam Jūsu C++ atgrieztos procentus ("pct") un posmu ("stage")
+                    const stageInfo = data.stage ? ` [${data.stage}]` : "";
+                    statusText.innerText = `Qt aplikācija apstrādā video: ${data.pct || 0}%${stageInfo}...`;
+                } 
+                else if (data.state === "done") {
+                    clearInterval(interval);
+                    statusSpinner.style.display = "none";
+                    statusText.innerHTML = `<span style="color: var(--success)">✓ Apstrāde pabeigta!</span><br>Sākas lejupielāde.`;
+
+                    const downloadUrl = `${API_BASE_URL}/download?id=${jobId}`;
+                    const dlHeaders = API_KEY !== "" ? { 'X-API-Key': API_KEY } : {};
+
+                    downloadWithProgress(downloadUrl, dlHeaders, "apstradats_video.mp4")
+                        .then(() => {
+                            statusText.innerHTML = `<span style="color: var(--success)">✓ Lejupielāde pabeigta!</span>`;
+                        })
+                        .catch(err => {
+                            console.error("log: Kļūda lejupielādējot:", err);
+                            statusText.innerText = `Kļūda: ${err.message}`;
+                        })
+                        .finally(() => {
+                            document.getElementById('submitBtn').disabled = false;
+                        });
+                } 
+                else if (data.state === "error") {
+                    clearInterval(interval);
+                    statusSpinner.style.display = "none";
+                    statusText.innerText = `Apstrādes kļūda: ${data.error || 'C++ sistēmas kļūda.'}`;
+                    document.getElementById('submitBtn').disabled = false;
+                }
+            } catch (err) {
+                console.error("log: Kļūda pārbaudot statusu:", err);
+            }
+        }, 3000); // Vaicājam ik pēc 3 sekundēm
+    }
+</script>
