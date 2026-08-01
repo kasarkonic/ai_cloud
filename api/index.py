@@ -329,7 +329,7 @@ def get_info():
 
 @app.route('/avise', methods=['GET'])
 def get_info():
-    return render_template('index.html')
+    return render_template('avise.html')
 
 def check_auth(username, password):
     # Šeit norādi savu lietotājvārdu un paroli
