@@ -328,7 +328,7 @@ def get_info():
     return render_template('info.html')
 
 @app.route('/avise', methods=['GET'])
-def get_info():
+def get_avise():
     return render_template('avise.html')
 
 def check_auth(username, password):
