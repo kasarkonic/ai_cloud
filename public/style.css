@@ -421,6 +421,13 @@ body {
 }
 
 /* RESPONSIVITĀTE MOBILAJĀM IEKĀRTĀM */
+@media (max-width: 800px) {
+	.arrow-img {
+        display: none !important;
+    }
+}
+
+
 @media (max-width: 1024px) {
     .main-header {
         flex-direction: column;
