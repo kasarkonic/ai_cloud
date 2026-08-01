@@ -327,6 +327,9 @@ def get_motion():
 def get_info():
     return render_template('info.html')
 
+@app.route('/avise', methods=['GET'])
+def get_info():
+    return render_template('index.html')
 
 def check_auth(username, password):
     # Šeit norādi savu lietotājvārdu un paroli
