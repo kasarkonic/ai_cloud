@@ -126,19 +126,18 @@ body {
 .map-container .base-map {
     width: 100%;
     height: auto;
-    filter: invert(1);
-    opacity: 0.85;
+    opacity: 1;
     display: block;
 }
 
-/* RŪPNĪCA */
+/* JŪSU NOFIKSĒTĀ RŪPNĪCA 1 */
 .overlay-factory {
     position: absolute;
     z-index: 15;
     width: 250px;
     height: auto;
-    top: 55%;
-    left: 55%;
+    top: 35%;
+    left: 60%;
     transform: translate(-50%, -50%);
     transition: transform 0.3s;
 }
@@ -148,13 +147,30 @@ body {
     z-index: 30;
 }
 
-/* KOKU STABIŅA NOFORMĒJUMS */
+/* JŪSU NOFIKSĒTĀ RŪPNĪCA 2 */
+.overlay-factory-2 {
+    position: absolute;
+    z-index: 15;
+    width: 250px;
+    height: auto;
+    top: 65%;
+    left: 40%;
+    transform: translate(-50%, -50%);
+    transition: transform 0.3s;
+}
+
+.overlay-factory-2:hover {
+    transform: translate(-50%, -50%) scale(1.5);
+    z-index: 30;
+}
+
+/* JŪSU NOFIKSĒTAIS KOKU STABIŅŠ 1 */
 .willow-zone {
     position: absolute;
     z-index: 10;
     width: 200px;
-    top: 60%;
-    left: 87%;
+    top: 40%;
+    left: 90%;
     display: flex;
     flex-direction: column-reverse;
     align-items: center;
@@ -162,6 +178,21 @@ body {
     transform: translate(-50%, -50%);
 }
 
+/* JŪSU NOFIKSĒTAIS KOKU STABIŅŠ 2 */
+.willow-zone-2 {
+    position: absolute;
+    z-index: 10;
+    width: 200px;
+    top: 70%;
+    left: 70%;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 12px;
+    transform: translate(-50%, -50%);
+}
+
+/* ANIMĒTAIS KOKU DZINĒJS (Abiem stabiņiem kopīgs) */
 .willow {
     width: 200px;
     height: auto;
@@ -184,26 +215,24 @@ body {
     }
 }
 
-.willow-1 {
-    animation-delay: 0s;
-}
+/* Nobīdes 1. klasterim */
+.willow-1 { animation-delay: 0s; }
+.willow-2 { animation-delay: -4.66s; }
+.willow-3 { animation-delay: -9.33s; }
 
-.willow-2 {
-    animation-delay: -4.66s;
-}
+/* Nobīdes 2. klasterim */
+.willow-4 { animation-delay: -2s; }
+.willow-5 { animation-delay: -6.66s; }
+.willow-6 { animation-delay: -11.33s; }
 
-.willow-3 {
-    animation-delay: -9.33s;
-}
-
-/* KUĢA ATTĒLS */
+/* JŪSU NOFIKSĒTAIS KUĢIS */
 .overlay-ship {
     position: absolute;
     z-index: 15;
     width: 150px;
     height: auto;
     top: 30%;
-    left: 40%;
+    left: 0%;
     transform: translate(-50%, -50%);
     transition: transform 0.3s;
 }
@@ -233,74 +262,117 @@ body {
     }
 }
 
-.arrow-willow-1 {
-    animation: bultasCikls 14s linear infinite;
-    animation-delay: 0s;
-}
+/* Bultu laika palaidēji 1. klasterim */
+.arrow-willow-1 { animation: bultasCikls 14s linear infinite; animation-delay: 0s; }
+.arrow-willow-2 { animation: bultasCikls 14s linear infinite; animation-delay: -4.66s; }
+.arrow-willow-3 { animation: bultasCikls 14s linear infinite; animation-delay: -9.33s; }
 
-.arrow-willow-2 {
-    animation: bultasCikls 14s linear infinite;
-    animation-delay: -4.66s;
-}
+/* Bultu laika palaidēji 2. klasterim */
+.arrow-willow-4 { animation: bultasCikls 14s linear infinite; animation-delay: -2s; }
+.arrow-willow-5 { animation: bultasCikls 14s linear infinite; animation-delay: -6.66s; }
+.arrow-willow-6 { animation: bultasCikls 14s linear infinite; animation-delay: -11.33s; }
 
-.arrow-willow-3 {
-    animation: bultasCikls 14s linear infinite;
-    animation-delay: -9.33s;
-}
+/* ==========================================================================
+   SAGLABĀTIE UN ANIMĒTIE JŪSU KORIĢĒTIE BULTU IZMĒRI UN LEŅĶI
+   ========================================================================== */
 
-/* BULTU JŪSU PRECIZĒTIE SKAITĻI UN LEŅĶI */
+/* --- 1. KLASTERA GAISMAS MARŠRUTI --- */
+
 .arrow-willow-1 {
     width: 240px;
     height: 40px;
-    top: 67%;
-    left: 72%;
+    top: 44%;
+    left: 75%;
     transform: translate(-50%, -50%) rotate(210deg);
 }
 
 .arrow-willow-2 {
     width: 240px;
     height: 40px;
-    top: 59%;
-    left: 74%;
+    top: 38%;
+    left: 77%;
     transform: translate(-50%, -50%) rotate(190deg);
 }
 
 .arrow-willow-3 {
     width: 240px;
     height: 40px;
-    top: 50%;
-    left: 73%;
-    transform: translate(-50%, -50%) rotate(155deg);
+    top: 32%;
+    left: 77%;
+    transform: translate(-50%, -50%) rotate(170deg);
 }
 
 .arrow-to-ship {
-    width: 240px;
+    width: 500px;
     height: 25px;
-    top: 41%;
-    left: 47%;
-    transform: translate(-50%, -50%) rotate(205deg);
+    top: 32%;
+    left: 28%;
+    transform: translate(-50%, -50%) rotate(185deg);
     animation: pulseArrow 7s infinite ease-in-out;
 }
 
 .arrow-to-sea {
-    width: 170px;
+    width: 200px;
     height: 40px;
-    top: 17%;
-    left: 35%;
+    top: 40%;
+    left: 0%;
+    transform: translate(-50%, -50%) rotate(100deg);
+    animation: pulseArrow 14s infinite ease-in-out;
+}
+
+/* --- 2. KLASTERA GAISMAS MARŠRUTI --- */
+
+.arrow-willow-4 {
+    width: 240px;
+    height: 40px;
+    top: 73%;
+    left: 56%;
+    transform: translate(-50%, -50%) rotate(220deg);
+}
+
+.arrow-willow-5 {
+    width: 240px;
+    height: 40px;
+    top: 68%;
+    left: 57%;
+    transform: translate(-50%, -50%) rotate(200deg);
+}
+
+.arrow-willow-6 {
+    width: 240px;
+    height: 40px;
+    top: 62%;
+    left: 57%;
+    transform: translate(-50%, -50%) rotate(170deg);
+}
+
+.arrow-to-ship-2 {
+    width: 400px;
+    height: 25px;
+    top: 47%;
+    left: 18%;
     transform: translate(-50%, -50%) rotate(225deg);
+    animation: pulseArrow 7s infinite ease-in-out;
+}
+
+.arrow-to-sea-2 {
+    width: 0px;
+    height: 40px;
+    top: 65%;
+    left: 30%;
+    transform: translate(-50%, -50%) rotate(200deg);
     animation: pulseArrow 14s infinite ease-in-out;
 }
 
 @keyframes pulseArrow {
-    0%, 100% {
-        opacity: 0;
-    }
-    40%, 60% {
-        opacity: 1;
-    }
+    0%, 100% { opacity: 0; }
+    40%, 60% { opacity: 1; }
 }
 
-/* PREMIUM KORPORATĪVAIS IELIKTŅŠ APRAKSTIEM (Swiss Engineering design) */
+/* ==========================================================================
+   APRAKSTI VERTIKĀLĀ STABIŅĀ UN APŠUVUMI LEJĀ
+   ========================================================================== */
+
 .bottom-content {
     padding: 80px 8%;
     background-color: var(--bg-card);
@@ -327,7 +399,6 @@ body {
     position: relative;
 }
 
-/* Tehniskās numerācijas stils */
 .tech-num {
     font-family: monospace;
     font-size: 11px;
@@ -349,7 +420,19 @@ body {
     max-width: 950px;
 }
 
-/* PERSONĪGĀ KONTAKTA BLOKA NOFORMĒJUMS (SADAĻA 06) */
+.info-card p a {
+    color: var(--avise-green);
+    text-decoration: none;
+    font-weight: bold;
+    border-bottom: 1px dashed var(--avise-green);
+    transition: color 0.2s;
+}
+
+.info-card p a:hover {
+    color: #ffffff;
+    border-bottom-color: #ffffff;
+}
+
 .contact-person-card {
     margin-top: 25px;
     padding: 25px;
@@ -394,7 +477,6 @@ body {
     color: var(--avise-green);
 }
 
-/* UZŅĒMUMA REKVIZĪTU BLOKA NOFORMĒJUMS (SADAĻA 07) */
 .corporate-details-block {
     margin-top: 25px;
     padding: 20px;
@@ -420,35 +502,25 @@ body {
     margin-right: 8px;
 }
 
+footer {
+    padding: 30px 8%;
+    text-align: center;
+    font-size: 12px;
+	color: var(--text-gray);
+	border-top: 1px solid rgba(255, 255, 255, 0.02);
+	}
+
 /* RESPONSIVITĀTE MOBILAJĀM IEKĀRTĀM */
 @media (max-width: 800px) {
 	.arrow-img {
         display: none !important;
     }
 }
-
-
 @media (max-width: 1024px) {
-    .main-header {
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-    }
-    .logo-area, .menu-area {
-        flex: 1;
-        text-align: center;
-    }
-    .menu-area {
-        flex-direction: column;
-        align-items: center;
-    }
-    .vertical-nav {
-        flex-direction: row;
-        gap: 15px;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    .title-area h1 {
-        font-size: 44px;
-    }
+    /*.arrow-img { display: none !important; }*/
+    .main-header { flex-direction: column; align-items: center; gap: 20px; }
+    .logo-area, .menu-area { flex: 1; text-align: center; }
+    .menu-area { flex-direction: column; align-items: center; }
+    .vertical-nav { flex-direction: row; gap: 15px; flex-wrap: wrap; justify-content: center; }
+    .title-area h1 { font-size: 44px; }
 }
