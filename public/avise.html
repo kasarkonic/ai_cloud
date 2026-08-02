@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AVISE PROJECT</title>
     <link rel="stylesheet" href="style.css">
-	<!link rel="stylesheet" href="adjust.css">
 </head>
 <body>
 
@@ -19,14 +18,16 @@
             <div class="lang-switch">
                 <a href="#" id="lang-en" class="active">EN</a> | 
                 <a href="#" id="lang-lv">LV</a> | 
-                <!-- Pievienota Lietuviešu valodas poga -->
                 <a href="#" id="lang-lt">LT</a>
             </div>
             <ul class="vertical-nav">
-                <li><a href="#production" id="m-prod">Production</a></li>
+                <li><a href="#home" id="m-home">Home</a></li>
+                <li><a href="#feedstock" id="m-feed">Feedstock</a></li>
                 <li><a href="#technology" id="m-tech">Technology</a></li>
+                <li><a href="#renewable" id="m-renew">Renewable</a></li>
+                <li><a href="#regional" id="m-reg">Regional Impact</a></li>
                 <li><a href="#co2" id="m-co2">CO2 Impact</a></li>
-                <li><a href="#investors" id="m-inv">Investors</a></li>
+                <li><a href="#partnerships" id="m-part">Partnerships</a></li>
                 <li><a href="#contact" id="m-cont">Contact</a></li>
             </ul>
         </div>
@@ -34,21 +35,16 @@
 
     <section class="main-map-section">
         <div class="map-container">
-            <!-- 1. PAMATA KARTE NOMAINĪTA UZ BALTIC.PNG -->
             <img src="baltic.png" alt="Baltijas reģiona karte" class="base-map">
             
-            <!-- ESOŠĀS RŪPNĪCAS UN KOKI -->
             <img src="factory.png" alt="AVISE Rūpnīca 1" class="overlay-factory">
-            
             <div class="willow-zone">
                 <img src="willow.png" alt="Willow 1" class="willow willow-1">
                 <img src="willow.png" alt="Willow 2" class="willow willow-2">
                 <img src="willow.png" alt="Willow 3" class="willow willow-3">
             </div>
 
-            <!-- 2. JAUNIE PAPILDU OBJEKTI (Rūpnīca 2 un koki 4,5,6) -->
             <img src="factory.png" alt="AVISE Rūpnīca 2" class="overlay-factory-2">
-            
             <div class="willow-zone-2">
                 <img src="willow.png" alt="Willow 4" class="willow willow-4">
                 <img src="willow.png" alt="Willow 5" class="willow willow-5">
@@ -57,14 +53,12 @@
             
             <img src="ship.png" alt="Eksporta kuģis" class="overlay-ship">
             
-            <!-- ESOŠĀS LOĢISTIKAS BULTAS -->
             <img src="arrow.png" alt="Flow 1" class="arrow-img arrow-willow-1">
             <img src="arrow.png" alt="Flow 2" class="arrow-img arrow-willow-2">
             <img src="arrow.png" alt="Flow 3" class="arrow-img arrow-willow-3">
             <img src="arrow.png" alt="To Ship" class="arrow-img arrow-to-ship">
             <img src="arrow.png" alt="To Sea" class="arrow-img arrow-to-sea">
 
-            <!-- JAUNĀS LOĢISTIKAS BULTAS (Trīs pie koka, divas pie rūpnīcas/kuģa) -->
             <img src="arrow.png" alt="Flow 4" class="arrow-img arrow-willow-4">
             <img src="arrow.png" alt="Flow 5" class="arrow-img arrow-willow-5">
             <img src="arrow.png" alt="Flow 6" class="arrow-img arrow-willow-6">
@@ -73,62 +67,103 @@
         </div>
     </section>
 
+    <!-- UNIFICĒTS SADAĻU STABIŅŠ -->
     <section class="bottom-content">
         <div class="info-grid">
-            <div class="info-card" id="production">
-                <div class="tech-num">01 / PRODUCTION SITE</div>
-                <h3 id="h-prod">Production Site</h3>
-                <p id="p-prod"></p>
+            
+            <!-- SADAĻA 01: HOME -->
+            <div class="info-card" id="home">
+                <div class="tech-num">01 / PROJECT OVERVIEW</div>
+                <h3 id="h-home">About AVISE project</h3>
+                <p id="p-home-1" style="margin-bottom: 10px; font-weight: bold;"></p>
+                <p id="p-home-2" style="margin-bottom: 10px;"></p>
+                <p id="p-home-3" style="margin-bottom: 10px;"></p>
+                <p id="p-home-4" style="margin-bottom: 15px;"></p>
+                <p id="p-home-5" style="color: var(--avise-green); font-weight: bold;"></p>
             </div>
+
+            <!-- SADAĻA 02: FEEDSTOCK -->
             <div class="info-card" id="feedstock">
-                <div class="tech-num">02 / SUSTAINABLE FEEDSTOCK</div>
+                <div class="tech-num">02 / BIOMASS SUPPLY</div>
                 <h3 id="h-feed">Sustainable Feedstock</h3>
-                <p id="p-feed"></p>
+                <p id="p-feed-1" style="margin-bottom: 10px; font-weight: bold;"></p>
+                <p id="p-feed-2" style="margin-bottom: 10px;"></p>
+                <p id="p-feed-3"></p>
             </div>
-            <div class="info-card" id="manufacturing">
-                <div class="tech-num">03 / MANUFACTURING PROCESS</div>
-                <h3 id="h-man">Manufacturing</h3>
-                <p id="p-man"></p>
-            </div>
+
+            <!-- SADAĻA 03: TECHNOLOGY -->
             <div class="info-card" id="technology">
-                <div class="tech-num">04 / TORREFACTION TECHNOLOGY</div>
+                <div class="tech-num">03 / TECHNICAL INFRASTRUCTURE</div>
                 <h3 id="h-tech">Technology</h3>
-                <p id="p-tech"></p>
+                <p id="p-tech-1" style="margin-bottom: 10px; font-weight: bold;"></p>
+                <p id="p-tech-2" style="margin-bottom: 10px;"></p>
+                <p id="p-tech-3"></p>
             </div>
+
+            <!-- SADAĻA 04: RENEWABLE -->
+            <div class="info-card" id="renewable">
+                <div class="tech-num">04 / SUSTAINABLE BIOECONOMY</div>
+                <h3 id="h-renew">Renewable Industrial Fuel</h3>
+                <p id="p-renew-1"></p>
+                <p id="p-renew-2"></p>
+            </div>
+
+            <!-- SADAĻA 05: REGIONAL IMPACT -->
+            <div class="info-card" id="regional">
+                <div class="tech-num">05 / RECONSTRUCTION & REGIONAL GROWTH</div>
+                <h3 id="h-reg">Regional Impact</h3>
+                <p id="p-reg-1"></p>
+            </div>
+
+            <!-- SADAĻA 06: CO2 IMPACT -->
             <div class="info-card" id="co2">
-                <div class="tech-num">05 / CLIMATE & CO2 IMPACT</div>
+                <div class="tech-num">06 / ENVIRONMENTAL STANDARDS</div>
                 <h3 id="h-co2-title">CO2 Impact</h3>
-                <p id="p-co2"></p>
+                <p id="p-co2-1"></p>
             </div>
-            <div class="info-card" id="investors">
-                <div class="tech-num">06 / INSTITUTIONAL INVESTORS & CAPITAL RELATIONS</div>
-                <h3 id="h-inv-title">Investors</h3>
-                <p id="p-inv-desc"></p>
-                <div class="contact-person-card">
-                    <div class="contact-name" id="c-name">Gatis Bērziņš</div>
-                    <div class="contact-position" id="c-role">AVISE Project Lead / Board Member</div>
-                    <div class="contact-email">
-                        <span id="c-lbl-email">Direct Capital Inquiry:</span> 
-                        <a href="mailto:aivars.kisis@aviseproject.eu" id="c-mail-link">aivars.kisis@aviseproject.eu</a>
+
+            <!-- SADAĻA 07: PARTNERSHIPS -->
+            <div class="info-card" id="partnerships">
+                <div class="tech-num">07 / COMMERCIAL OFFTAKE & INFRASTRUCTURE</div>
+                <h3 id="h-part-title">Strategic Partnerships</h3>
+                <p id="p-part-1" style="margin-bottom: 10px; font-weight: bold;"></p>
+                <p id="p-part-2" style="margin-bottom: 10px;"></p>
+                <p id="p-part-3"></p>
+            </div>
+
+            <!-- SADAĻA 08: JURIDISKIE UN REĢIONĀLIE KONTAKTI (GALA) -->
+            <div class="info-card" id="contact">
+                <div class="tech-num">08 / CORPORATE & REGIONAL HEADQUARTERS</div>
+                <h3 id="h-cont-title">Contact</h3>
+                <p id="p-cont-desc" style="margin-bottom: 20px;"></p>
+                
+                <div class="contact-person-card" style="margin-bottom: 20px; max-width: 600px;">
+                    <div class="contact-position" id="lbl-direct" style="margin-bottom: 5px;">Direct Capital Inquiry:</div>
+                    <div class="contact-name"><a href="mailto:aivars.kisis@aviseproject.eu" style="color: var(--avise-green); font-size: 18px; text-decoration: none; border-bottom: 1px dashed var(--avise-green);">aivars.kisis@aviseproject.eu</a></div>
+                </div>
+
+                <div style="display: flex; gap: 30px; flex-wrap: wrap; text-align: left;">
+                    <div class="corporate-details-block" style="margin-top: 0; flex: 1; min-width: 250px;">
+                        <div class="tech-num" id="lbl-latvia" style="color: #ffffff; margin-bottom: 5px;">Latvia office:</div>
+                        <div class="corp-row"><strong>SIA Green Energy Solutions</strong></div>
+                        <div class="corp-row">Aivars Kisis</div>
+                        <div class="corp-row">Phone: +371 29180789</div>
+                    </div>
+                    <div class="corporate-details-block" style="margin-top: 0; flex: 1; min-width: 250px; border-left: 2px solid var(--avise-green);">
+                        <div class="tech-num" id="lbl-lithuania" style="color: #ffffff; margin-bottom: 5px;">Lithuania office:</div>
+                        <div class="corp-row"><strong>UAB "TORENERGY"</strong></div>
+                        <div class="corp-row">Vitalijus Mittas</div>
+                        <div class="corp-row">Phone: +306 860 8709</div>
                     </div>
                 </div>
             </div>
-            <div class="info-card" id="contact">
-                <div class="tech-num">07 / GENERAL CONTACT DETAILS</div>
-                <h3 id="h-cont-title">Contact</h3>
-                <p id="p-cont-desc"></p>
-                <div class="corporate-details-block">
-                    <div class="corp-row"><strong id="c-corp-name">SIA Green Energy Solutions</strong></div>
-                    <div class="corp-row"><span id="lbl-reg">Reg. No:</span> <span id="c-reg-val">40103246256</span></div>
-                    <div class="corp-row"><span id="lbl-addr">Legal Address:</span> <span id="c-addr-val">Viļņu iela 3, Ragaciems, Lapmežciema pag., Tukuma nov., LV-3118</span></div>
-                    <div class="corp-row"><span id="lbl-phone">Phone:</span> <span id="c-phone-val">+371 29180789</span></div>
-                </div>
-            </div>
+
         </div>
     </section>
 
     <footer><p>&copy; 2026 AVISE Project. All rights reserved. | SIA Green Energy Solutions | Latvija</p></footer>
-	<script src="translations.js"></script>
+
+    <script src="translations.js"></script>
     <script src="languages.js"></script>
 </body>
 </html>
