@@ -22,7 +22,7 @@ const translations = {
         hTech: "Technology",
         pTech1: "The infrastructure concept includes biomass intake and storage, drying, torrefaction and pelleting systems, product storage and loading, internal material handling, road and potential rail logistics, electricity supply, safety systems and environmental-control systems.",
         pTech2: "The project has advanced discussions and evaluation with experienced technology providers, including “Yilkins”, “NextFuel” and “Andritz”.",
-        pTech3: "The final technology route will be selected based on technical performance, product quality, CAPEX, OPEX, energy efficiency, warranties and guarantees, delivery schedule, EU compliance, safety and emissions requirements and has been supported by external technology-performance insurance structures in other projects.",
+        pTech3: "The final technology solution was selected based on technical performance, product quality, CAPEX, OPEX, energy efficiency, warranties and guarantees, delivery schedule, EU compliance, safety and emissions requirements and has been supported by external technology-performance insurance structures in other projects.",
 
         // 04 / RENEWABLE
         hRenew: "Renewable Industrial Fuel",
@@ -56,32 +56,32 @@ const translations = {
         
         // 01 / HOME
         hHome: "Par AVISE projektu",
-        pHome1: "AVISE ir Baltijas mēroga industriāls biomasas projekts, kura mērķis ir torificētu koksnes granulu ražošana izmantošanai atjaunojamās industriālās degvielas sektorā.",
+        pHome1: "AVISE ir Baltijas mēroga industriāls biomasas projekts, kura mērķis ir torificētu koksnes granulu ražošana, ko paredzēts izmantot atjaunojamās industriālās degvielas sektorā.",
         pHome2: "AVISE pamatā ir integrēts modelis, kas ietver ilgtspējīgu biomasas audzēšanu, izejvielu loģistiku, industriālo pārstrādi, produkcijas uzglabāšanu, iekraušanu un ilgtermiņa komerciālo realizāciju.",
-        pHome3: "Projekts tiek attīstīts kā platforma, kas sastāv no divām rūpnīcām — vienas Latvijā un otras Lietuvā. Katras rūpnīcas plānotā ražošanas jauda ir aptuveni 180 000 tonnu gadā.",
-        pHome4: "AVISE apvieno ilgtspējīgu biomasas piegādi, industriālā mēroga torifikāciju, ilgtermiņa komerciālos offtake līgumus, inženiertehnisko sagatavošanu un reģionālās infrastruktūras attīstību.",
+        pHome3: "Projekts tiek attīstīts kā platforma, kas sastāv no divām rūpnīcām — viena Latvijā un otra Lietuvā. Katras rūpnīcas plānotā ražošanas jauda ir aptuveni 180 000 tonnu gadā.",
+        pHome4: "AVISE apvieno ilgtspējīgu biomasas piegādi, industriālā mēroga torifikāciju, ilgtermiņa produkcijas realizēšanas līgumu /offtake agreement/, inženiertehnisko sagatavošanu un reģionālās infrastruktūras attīstību.",
         pHome5: "Plānotā jauda: 360 000 tonnu gadā.",
 
         // 02 / FEEDSTOCK
         hFeed: "Ilgtspējīgas izejvielas",
         pFeed1: "AVISE izejvielu stratēģija ir balstīta uz ilgtspējīgas biomasas audzēšanu un modificēšanu, kas ir piemērota torificētas degvielas ražošanai.",
-        pFeed2: "Centrālā izejvielu modeļa sastāvdaļa ir īscirtmeta kārklu (rotācija ik pēc 3 gadiem) audzēšana neizmantotā vai nepilnīgi izmantotā lauksaimniecības zemē. Šī pieeja atbalsta atjaunojamās industriālās degvielas ražošanu, vienlaikus veicinot lauku ekonomisko attīstību un produktīvu zemes izmantošanu.",
-        pFeed3: "Liela mēroga kārklu audzēšana jau ir sekmīgi demonstrēta Ziemeļeiropā. AVISE attīsta šo praktisko zinātību (know-how), sadarbojoties ar agronomijas speciālistiem, zemes īpašniekiem un biomasas piegādes ķēdes partneriem no Zviedrijas.",
+        pFeed2: "Centrālā izejvielu modeļa sastāvdaļa ir enerģētisko ātraudzīgio kārklu (ražu novāc ik pēc 3 gadiem) audzēšana neizmantotā vai nepilnīgi izmantotā lauksaimniecības zemē. Šī pieeja atbalsta atjaunojamās industriālās degvielas ražošanu, vienlaikus veicinot lauku ekonomisko attīstību un produktīvu zemes izmantošanu.",
+        pFeed3: "Liela mēroga kārklu audzēšana jau ir sekmīgi demonstrēta Ziemeļeiropā. AVISE attīsta šīs praktiskās zināšanas (know-how), sadarbojoties ar agronomijas speciālistiem, zemes īpašniekiem un biomasas piegādes ķēdes partneriem no Zviedrijas.",
 
         // 03 / TECHNOLOGY
         hTech: "Tehnoloģija",
-        pTech1: "Infrastruktūras koncepts ietver biomasas pieņemšanu un uzglabāšanu, žāvēšanu, torifikācijas un granulēšanas sistēmas, gatavās produkcijas uzglabāšanu un iekraušanu, iekšējo materiālu pārkraušanu, autotransporta un potenciālo dzelzceļa loģistiku, elektroapgādi, drošības sistēmas un vides kontroles sistēmas.",
-        pTech2: "Projektā ir uzsāktas padziļinātas diskusijas un izvērtēšana ar pieredzējušiem tehnoloģiju nodrošinātājiem, tostarp „Yilkins”, „NextFuel” un „Andritz”.",
-        pTech3: "Galīgais tehnoloģiskais risinājums tiks izvēlēts, pamatojoties uz tehnisko izpildījumu, produkcijas kvalitāti, CAPEX, OPEX, energoefektivitāti, garantijām, piegādes grafiku, atbilstību ES regulām, drošības un emisiju prasībām, kā arī ņemot vērā ārējās tehnoloģiskā izpildījuma apdrošināšanas struktūras citos projektos.",
+        pTech1: "Infrastruktūras koncepts ietver biomasas novākšanu un uzglabāšanu, žāvēšanu, torifikācijas un granulēšanas sistēmas, gatavās produkcijas uzglabāšanu un iekraušanu, kvalitātes kontroli, iekšējo materiālu pārkraušanu, autotransporta un potenciālo dzelzceļa loģistiku, elektroapgādi, drošības sistēmas un vides kontroles sistēmas.",
+        pTech2: "Projektā ir veiktas padziļinātas diskusijas un tehnoloģiju izvērtēšana ar pieredzējušiem tehnoloģiju nodrošinātājiem, tostarp „Yilkins”, „NextFuel” un „Andritz",
+        pTech3: "Galīgais tehnoloģiskais risinājums tika izvēlēts, pamatojoties uz tehnisko izpildījumu, produkcijas kvalitāti, CAPEX, OPEX, energoefektivitāti, garantijām, piegādes grafiku, atbilstību ES regulām, drošības un emisiju prasībām, kā arī ņemot vērā ārējās tehnoloģiskā izpildījuma apdrošināšanas struktūras citos projektos.",
 
         // 04 / RENEWABLE
         hRenew: "Atjaunojamā industriālā degviela",
-        pRenew1: "AVISE mērķis ir atbalstīt pāreju no fosilā kurināmā rūpniecībā uz ilgtspējīgām cietā biokurināmā alternatīvām.",
-        pRenew2: "Projekts sniedz būtisku ieguldījumu Baltijas bioekonomikas attīstībā, savienojot ilgtspējīgu biomasas ražošanu, industriālo pārstrādi un ilgtermiņa pieprasījumu pēc zaļās industriālās degvielas.",
+        pRenew1: "AVISE mērķis ir atbalstīt pāreju no fosilā kurināmā rūpniecībā uz ilgtspējīgām atjaunojamām cietā biokurināmā alternatīvām.",
+        pRenew2: "Projekts sniedz būtisku ieguldījumu Baltijas ekonomikas attīstībā, savienojot ilgtspējīgu biomasas ražošanu, industriālo pārstrādi un ilgtermiņa pieprasījumu pēc zaļās industriālās degvielas.",
 
         // 05 / REGIONAL IMPACT
         hReg: "Reģionālā ietekme",
-        pReg1: "AVISE ilgtspējas sistēma aptver ilgtspējīgu biomasas ražošanu, neizmantotās vai nepilnīgi izmantotās lauksaimniecības zemes apsaimniekošanu, loģistiku un jaunu darbavietu radīšanu reģionā. Tā ietver arī nozīmīgus vides un infrastruktūras uzlabojumus.",
+        pReg1: "AVISE ietver ilgtspējīgu biomasas ražošanu, neizmantotās vai nepilnīgi izmantotās lauksaimniecības zemes apsaimniekošanu, loģistiku un jaunu darbavietu radīšanu reģionā. Tā ietver arī nozīmīgus vides un infrastruktūras uzlabojumus.",
 
         // 06 / CO2 IMPACT
         hCo2: "CO2 ietekme",
@@ -149,11 +149,3 @@ const translations = {
 		lblLithuania: "Biuras Lietuvoje:"
 		}
 		};
-		
-		
-		
-		
-		
-		
-		
-		
